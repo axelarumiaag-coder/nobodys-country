@@ -2,7 +2,7 @@
 // No és una vista 360°: cada vista és un fotograma real. «Girar» passa a la vista següent
 // gravada des del mateix punt i els punts de navegació només apareixen on el pas cap a
 // l'altre espai és visible a la imatge.
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getProperty } from '../data/properties';
 import { realTour, type FrameHotspot } from '../data/realHouse';
@@ -11,6 +11,10 @@ import { useReducedMotion } from '../lib/useReducedMotion';
 import { Icon } from '../components/Icon';
 import { LogoMark } from '../components/Logo';
 import { VideoChapters } from '../components/VideoChapters';
+import type { ViewerHandle, ViewerStatus } from '../viewer/PanoramaViewer';
+
+// El visor 360° (Three.js) només es carrega quan es mostra una panoràmica recreada
+const PartialPano = lazy(() => import('../viewer/PartialPano'));
 
 const ZOOM_MAX = 2.2;
 
@@ -40,6 +44,11 @@ export function FrameTourPage() {
   const [videoOpen, setVideoOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [routeOpen, setRouteOpen] = useState(() => window.matchMedia?.('(min-width: 760px)').matches ?? true);
+  // Als espais amb panoràmica recreada es mostra el 360° per defecte; es pot canviar als fotogrames
+  const [mode, setMode] = useState<'360' | 'frames'>(params.get('modo') === 'fotogrames' ? 'frames' : '360');
+  const [panoStatus, setPanoStatus] = useState<ViewerStatus>({ state: 'loading' });
+  const panoRef = useRef<ViewerHandle>(null);
+  const show360 = !!stop.pano && mode === '360';
 
   useEffect(() => {
     document.title = `Recorregut · ${property.title} — HABITAT IMMERSIVE`;
@@ -118,6 +127,18 @@ export function FrameTourPage() {
         return;
       }
       if ((e.target as HTMLElement).closest('input, select, textarea')) return;
+      // En mode 360° el visor gestiona les fletxes i el zoom quan té el focus
+      if (show360 && ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', '+', '=', '-'].includes(e.key)) {
+        if (!(e.target as HTMLElement).closest('.viewer')) {
+          if (e.key === 'ArrowRight') panoRef.current?.rotate(20);
+          else if (e.key === 'ArrowLeft') panoRef.current?.rotate(-20);
+          else if (e.key === '+' || e.key === '=') panoRef.current?.zoomIn();
+          else if (e.key === '-') panoRef.current?.zoomOut();
+          else return;
+          e.preventDefault();
+        }
+        return;
+      }
       if (e.key === 'ArrowRight') turn(1);
       else if (e.key === 'ArrowLeft') turn(-1);
       else if (e.key === 'PageDown' || e.key === ']') stepStop(1);
@@ -190,8 +211,10 @@ export function FrameTourPage() {
 
   const isLoaded = !!loaded[view.src];
   useEffect(() => {
-    if (isLoaded || failed) setBooted(true);
-  }, [isLoaded, failed]);
+    if (isLoaded || failed || (show360 && panoStatus.state !== 'loading')) setBooted(true);
+  }, [isLoaded, failed, show360, panoStatus.state]);
+  useEffect(() => setPanoStatus({ state: 'loading' }), [stop.id]);
+  const status = show360 ? panoStatus.state : failed ? 'error' : isLoaded ? 'ready' : 'loading';
 
   const imgUrl = asset(`${view.src}.jpg`);
   const chapterStart = useMemo(() => property.video?.chapters.find((c) => c.stop === stop.id)?.stop, [property.video, stop.id]);
@@ -199,15 +222,37 @@ export function FrameTourPage() {
   return (
     <div
       ref={shell}
-      className={`tour ftour${booted ? ' is-booted' : ''}${fullscreen ? ' is-fullscreen' : ''}`}
+      className={`tour ftour${booted ? ' is-booted' : ''}${fullscreen ? ' is-fullscreen' : ''}${show360 ? ' is-360' : ''}`}
       data-stop={stop.id}
       data-view={view.id}
-      data-status={failed ? 'error' : isLoaded ? 'ready' : 'loading'}
+      data-mode={show360 ? '360' : 'frames'}
+      data-status={status}
     >
       {/* Fons: el mateix fotograma desenfocat per omplir la pantalla */}
       <div key={`bg-${view.src}`} className="ftour__backdrop" style={{ backgroundImage: `url("${asset(`${view.src}-sm.jpg`)}")` }} aria-hidden="true" />
 
-      <div className="ftour__stage" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onWheel={onWheel}>
+      {show360 && stop.pano && (
+        <div className="ftour__pano">
+          <Suspense fallback={null}>
+            <PartialPano key={stop.id} ref={panoRef} stop={stop} reducedMotion={reduced} onStatus={setPanoStatus} onFirstInteraction={() => setHint(false)} />
+          </Suspense>
+          <p className="ftour__pano-caption">
+            <span className="ftour__long">Recreació 360° a partir de {stop.pano.frames} fotogrames del vídeo · </span>
+            {stop.pano.horizontalDegrees}° gravats · la resta, difuminada
+          </p>
+          {panoStatus.state === 'error' && (
+            <div className="ftour__failed" role="alert">
+              <Icon name="info" size={28} />
+              <p>No s'ha pogut carregar la vista 360°.</p>
+              <button className="btn btn--light btn--small" onClick={() => setMode('frames')}>
+                Mostra els fotogrames
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="ftour__stage" hidden={show360} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onWheel={onWheel}>
         <figure
           key={view.src}
           className={`ftour__frame ftour__frame--${dir}${walkFrom ? ' is-walking' : ''}`}
@@ -266,7 +311,7 @@ export function FrameTourPage() {
           </figcaption>
         </figure>
 
-        {stop.views.length > 1 && (
+        {stop.views.length > 1 && !show360 && (
           <>
             <button className="ftour__turn ftour__turn--left tour-btn" onClick={() => turn(-1)} aria-label="Gira: vista anterior">
               <Icon name="arrowLeft" />
@@ -286,7 +331,7 @@ export function FrameTourPage() {
         </Link>
         <div className="tour__title">
           <span className="tour__eyebrow">
-            <Icon name="home" size={13} /> Habitatge real · recorregut visual
+            <Icon name="home" size={13} /> Habitatge real · recorregut i 360° recreat
           </span>
           <span className="tour__name">{property.title}</span>
         </div>
@@ -323,6 +368,16 @@ export function FrameTourPage() {
             {stop.name}
           </span>
         </span>
+        {stop.pano && (
+          <div className="ftour__modes" role="radiogroup" aria-label="Tipus de vista">
+            <button role="radio" aria-checked={show360} className={show360 ? 'is-active' : ''} onClick={() => setMode('360')}>
+              <Icon name="pano" size={15} /> 360° recreat
+            </button>
+            <button role="radio" aria-checked={!show360} className={!show360 ? 'is-active' : ''} onClick={() => setMode('frames')}>
+              <Icon name="layers" size={15} /> Fotogrames
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Recorregut (ordre del vídeo) */}
@@ -351,6 +406,7 @@ export function FrameTourPage() {
                   <img src={asset(`${s.views[0].src}-sm.jpg`)} alt="" loading="lazy" />
                   <span>
                     <em>{String(i + 1).padStart(2, '0')}</em> {s.name}
+                    {s.pano && <b className="ftour__tag">360°</b>}
                   </span>
                 </button>
               </li>
@@ -361,10 +417,16 @@ export function FrameTourPage() {
 
       {/* Zoom */}
       <div className="tour__controls" role="toolbar" aria-label="Controls de la vista">
-        <button className="tour-btn" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + 0.4))} aria-label="Apropa" title="Apropa">
+        <button className="tour-btn" onClick={() => (show360 ? panoRef.current?.zoomIn() : setZoom((z) => Math.min(ZOOM_MAX, z + 0.4)))} aria-label="Apropa" title="Apropa">
           <Icon name="plus" />
         </button>
-        <button className="tour-btn" onClick={() => (setZoom(1), setPan({ x: 0, y: 0 }))} aria-label="Allunya" title="Allunya" disabled={zoom === 1}>
+        <button
+          className="tour-btn"
+          onClick={() => (show360 ? panoRef.current?.zoomOut() : (setZoom(1), setPan({ x: 0, y: 0 })))}
+          aria-label="Allunya"
+          title="Allunya"
+          disabled={!show360 && zoom === 1}
+        >
           <Icon name="minus" />
         </button>
       </div>
@@ -372,7 +434,7 @@ export function FrameTourPage() {
       {/* Avís honest */}
       <div className={`tour__notice${noticeOpen ? ' is-open' : ''}`}>
         <button className="tour__notice-btn" onClick={() => setNoticeOpen((o) => !o)} aria-expanded={noticeOpen}>
-          <Icon name="info" size={16} /> Fotogrames reals · no és 360°
+          <Icon name="info" size={16} /> 360° parcial recreat del vídeo
         </button>
         {noticeOpen && <p role="note">{tour.notice}</p>}
       </div>
@@ -380,8 +442,16 @@ export function FrameTourPage() {
       <div className={`tour__hint${hint && booted ? ' is-visible' : ''}`} aria-hidden={!hint}>
         <Icon name="hand" size={22} />
         <span>
-          <strong>Llisca o fes servir les fletxes</strong> per girar dins de cada espai · Toca els <strong>punts</strong> per avançar · El <strong>recorregut</strong> et porta a
-          qualsevol espai
+          {show360 ? (
+            <>
+              <strong>Arrossega</strong> per mirar al voltant · <strong>Roda o pessic</strong> per apropar · Canvia a <strong>Fotogrames</strong> per veure les imatges originals
+            </>
+          ) : (
+            <>
+              <strong>Llisca o fes servir les fletxes</strong> per girar dins de cada espai · Toca els <strong>punts</strong> per avançar · El <strong>recorregut</strong> et porta
+              a qualsevol espai
+            </>
+          )}
         </span>
       </div>
 

@@ -21,7 +21,7 @@ export function PropertyCard({ property: p, priority = false }: { property: Prop
             {real ? <span className="badge badge--real">Habitatge real</span> : <span className="badge">{operationLabel(p.operation)}</span>}
             {p.tourId && (
               <span className="badge badge--tour">
-                <Icon name={p.tourKind === 'frames' ? 'door' : 'pano'} size={15} /> {p.tourKind === 'frames' ? 'Recorregut visual' : 'Visita 360°'}
+                <Icon name={p.tourKind === 'frames' ? 'door' : 'pano'} size={15} /> {p.tourKind === 'frames' ? 'Recorregut i 360°' : 'Visita 360°'}
               </span>
             )}
           </div>

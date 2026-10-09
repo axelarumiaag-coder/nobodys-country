@@ -55,7 +55,7 @@ export function PropertyPage() {
               <span className="badge badge--outline">{p.type}</span>
               {p.tourId && (
                 <span className="badge badge--tour">
-                  <Icon name={frames ? 'door' : 'pano'} size={15} /> {frames ? 'Recorregut visual disponible' : 'Visita 360° disponible'}
+                  <Icon name={frames ? 'door' : 'pano'} size={15} /> {frames ? 'Recorregut i 360° recreat' : 'Visita 360° disponible'}
                 </span>
               )}
               {real ? <span className="badge badge--real">Habitatge real · {p.reference}</span> : <span className="badge badge--demo">Anunci fictici · {p.reference}</span>}
@@ -85,11 +85,13 @@ export function PropertyPage() {
             <Link to={tourUrl} className="explore__main">
               <img src={asset(`${p.images[0].src}.jpg`)} alt="" />
               <span className="explore__main-text">
-                <span className="eyebrow eyebrow--light">Recorregut visual · {p.spaces.length} espais</span>
+                <span className="eyebrow eyebrow--light">
+                  Recorregut · {p.spaces.length} espais · {p.spaces.filter((s) => s.has360).length} en 360°
+                </span>
                 <span id="explore-title" className="explore__title">
                   Explora la casa pas a pas
                 </span>
-                <span className="explore__sub">Fotogrames reals del vídeo, amb punts per avançar d'un espai a l'altre.</span>
+                <span className="explore__sub">Vistes 360° recreades a partir del vídeo i fotogrames reals, amb punts per avançar d'un espai a l'altre.</span>
                 <span className="btn btn--light">
                   <Icon name="door" /> Comença el recorregut
                 </span>
@@ -102,6 +104,7 @@ export function PropertyPage() {
                     <img src={asset(`${s.image}-sm.jpg`)} alt="" loading="lazy" />
                     <span>
                       <em>{String(i + 1).padStart(2, '0')}</em> {s.name}
+                      {s.has360 && <b className="ftour__tag">360°</b>}
                     </span>
                   </Link>
                 </li>
@@ -209,7 +212,7 @@ export function PropertyPage() {
                   <h2>{frames ? 'Recorre la casa com si hi fossis' : 'Entra-hi i mira al voltant'}</h2>
                   <p>
                     {frames
-                      ? `${p.spaces?.length ?? 0} espais reals connectats amb punts de navegació, vistes per girar dins de cada espai i el vídeo per capítols.`
+                      ? `${p.spaces?.length ?? 0} espais reals; ${p.spaces?.filter((s) => s.has360).length ?? 0} es poden mirar en 360° recreat a partir del vídeo. Punts de navegació, fotogrames originals i el vídeo per capítols.`
                       : 'Sala, cuina i dos dormitoris connectats amb punts de navegació i un plànol interactiu.'}
                   </p>
                 </div>

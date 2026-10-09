@@ -1,0 +1,50 @@
+{
+  "terrassa": {
+    "full": "/media/real/casa-real/pano/terrassa.jpg",
+    "preview": "/media/real/casa-real/pano/terrassa-preview.jpg",
+    "label": null,
+    "frames": 23,
+    "coverage": 0.196,
+    "horizontalDegrees": 181,
+    "yaw": [
+      78.6,
+      259.3
+    ],
+    "pitch": [
+      -50.9,
+      29.5
+    ]
+  },
+  "cuina": {
+    "full": "/media/real/casa-real/pano/cuina.jpg",
+    "preview": "/media/real/casa-real/pano/cuina-preview.jpg",
+    "label": "Pas del menjador a la cuina",
+    "frames": 22,
+    "coverage": 0.191,
+    "horizontalDegrees": 130,
+    "yaw": [
+      91.8,
+      222.2
+    ],
+    "pitch": [
+      -66.4,
+      56.6
+    ]
+  },
+  "sala": {
+    "full": "/media/real/casa-real/pano/sala.jpg",
+    "preview": "/media/real/casa-real/pano/sala-preview.jpg",
+    "label": "Finestral de la sala",
+    "frames": 9,
+    "coverage": 0.086,
+    "horizontalDegrees": 76,
+    "yaw": [
+      145.3,
+      221.2
+    ],
+    "pitch": [
+      -46.8,
+      51.5
+    ]
+  }
+}

@@ -186,7 +186,7 @@ proveïdor. Això queda fora d'aquesta demo.
 
 ## 7. Proves
 
-- `npm test`: 16 proves unitàries (filtres i ordenació, dades pendents de l'habitatge real, serialització a la URL, validació del
+- `npm test`: 17 proves unitàries (filtres i ordenació, dades pendents de l'habitatge real, serialització a la URL, validació del
   formulari, connexió de les quatre estances, conversions de coordenades i existència de tots els
   recursos referenciats).
 - `npm run test:e2e`: 13 escenaris amb Chromium real (inclosos 3 de l'habitatge real: fitxa, vídeo, recorregut i errors de càrrega): portada, cercador, navegació a seccions,
@@ -225,19 +225,42 @@ entrada amb porta de fusta, passadís (amb el bany vist de lluny), sala d'estar 
 zona de menjador, terrassa àmplia amb zona coberta, jardineres i caseta de fusta, cuina i un dormitori.
 Hi ha molts trams moguts o foscos (sobretot la cuina) i la càmera es desplaça mentre gira.
 
-**Per què no és una visita 360°.** El vídeo no conté cap panoràmica completa. S'ha provat d'unir
-fotogrames amb OpenCV: només se n'obtenen franges de 60–90° deformades, i en alguns casos hi apareixen
-dades personals, així que no s'han fet servir. En lloc d'un 360° fals, la web ofereix:
+**Recreació 360° a partir del vídeo.** Als trams on la càmera gira sobre si mateixa,
+`scripts/video/pano360.py` reconstrueix una panoràmica equirectangular de veritat:
 
-- **Recorregut visual** (`/visita/casa-real`): set espais en l'ordre del vídeo; dins de cada espai es
-  «gira» passant d'un fotograma real a un altre gravat des del mateix lloc (fletxes, teclat o lliscar);
-  punts de navegació només on el pas cap a l'altre espai es veu a la imatge; zoom, pantalla completa,
-  tira del recorregut i accés al vídeo des de cada espai.
+1. tria fotogrames nítids i espaiats del tram;
+2. aparella punts característics (SIFT) entre fotogrames;
+3. estima la rotació de la càmera de cada fotograma (model de rotació pura + ajust de feixos) i redreça l'horitzó;
+4. projecta cada fotograma sobre una esfera: amb el projector esfèric d'OpenCV, la sortida ja és
+   equirectangular i cada fotograma queda a la seva longitud i latitud reals;
+5. barreja els fotogrames (compensació d'exposició, costures i barreja multibanda);
+6. omple la part no gravada amb una continuació molt difuminada dels colors veïns, sense inventar detalls,
+   i desa el rang realment cobert.
+
+Resultat amb aquest vídeo:
+
+| Espai | Graus horitzontals gravats | Fotogrames |
+| --- | --- | --- |
+| Terrassa | 181° | 23 |
+| Menjador → cuina | 130° | 22 |
+| Sala (finestral) | 76° | 9 |
+
+La sala sencera, l'entrada i el dormitori **no** s'han pogut reconstruir: la càmera avança mentre gira i
+la imatge és massa moguda, i l'estimació divergeix. Aquests espais es mostren amb fotogrames reals.
+
+Al recorregut (`/visita/casa-real`), els espais amb panoràmica s'obren en **«360° recreat»** amb el
+mateix visor Three.js de les visites de demostració. La mirada queda limitada a la zona gravada, i un
+selector permet passar als **fotogrames** originals. Per a la resta d'espais hi ha:
+
+- **Recorregut amb fotogrames**: set espais en l'ordre del vídeo; dins de cada espai es «gira» passant
+  d'un fotograma real a un altre (fletxes, teclat o lliscar); hi ha punts de navegació on el pas cap a
+  l'altre espai es veu a la imatge, zoom, pantalla completa i una tira del recorregut.
 - **Vídeo per capítols** a la fitxa i dins del recorregut: un muntatge de ~30 s sense àudio.
 
 **Privacitat.** S'han exclòs els fragments i fotogrames on surten un retrat d'una persona, el televisor,
-fotos personals de la nevera i d'un prestatge, un dibuix d'una cara i una placa amb un número. El vídeo
-publicat no té àudio. El vídeo original **no** es puja al repositori (`media-source/` és a `.gitignore`).
+fotos personals de la nevera i d'un prestatge, un dibuix d'una cara i una placa amb un número; la
+panoràmica de la sala s'ha limitat al tram on no apareix el retrat. El vídeo publicat no té àudio. El
+vídeo original **no** es puja al repositori (`media-source/` és a `.gitignore`).
 
 ### Tornar a processar el vídeo (o afegir-ne un altre)
 
@@ -249,7 +272,8 @@ Requisits locals i gratuïts: FFmpeg i Python 3 amb `opencv-python-headless` i `
    (`from`/`to`, en segons) d'on triar el fotograma més nítid, i els trams del vídeo editat. Les
    finestres serveixen també per deixar fora els moments amb dades personals. Si cal, una vista pot
    difuminar zones amb `"blur": [[x, y, amplada, alçada]]` (en fraccions de la imatge).
-3. Executa `python3 scripts/video/process_video.py scripts/video/casa-real.config.json`.
+3. Executa `python3 scripts/video/process_video.py scripts/video/casa-real.config.json` (fotogrames i vídeo)
+   i `python3 scripts/video/build_panos.py` (panoràmiques 360° recreades; els trams es configuren al mateix script).
 
 L'script tria el fotograma més nítid de cada finestra (variància del laplacià), descarta els que són
 gairebé idèntics a un altre ja triat (hash perceptual), aplica un ajust suau (contrast local, brillantor

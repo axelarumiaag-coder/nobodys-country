@@ -39,4 +39,20 @@ describe('habitatge real a partir del vídeo', () => {
     expect(v.chapters.map((c) => c.stop)).toEqual(realTour.stops.map((s) => s.id));
     expect(v.chapters.every((c, i, a) => i === 0 || c.start > a[i - 1].start)).toBe(true);
   });
+  it('les panoràmiques 360° recreades existeixen i declaren la zona realment gravada', () => {
+    const withPano = realTour.stops.filter((s) => s.pano);
+    expect(withPano.map((s) => s.id).sort()).toEqual(['cuina', 'sala', 'terrassa']);
+    for (const s of withPano) {
+      const p = s.pano!;
+      expect(fs.existsSync(`public${p.full}`), p.full).toBe(true);
+      expect(fs.existsSync(`public${p.preview}`), p.preview).toBe(true);
+      expect(p.horizontalDegrees).toBeGreaterThan(60);
+      expect(p.horizontalDegrees).toBeLessThan(360); // no és una esfera completa
+      expect(p.coverage).toBeGreaterThan(0);
+      expect(p.coverage).toBeLessThan(1);
+      // el rang de mirada coincideix amb els graus horitzontals gravats
+      expect(Math.abs(p.yaw[1] - p.yaw[0] - p.horizontalDegrees)).toBeLessThan(3);
+      expect(p.pitch[0]).toBeLessThan(p.pitch[1]);
+    }
+  });
 });

@@ -26,6 +26,11 @@ interface Props {
   reducedMotion?: boolean;
   /** Incrementar per tornar a intentar la càrrega després d'un error */
   retryKey?: number;
+  /**
+   * Límits de la mirada (graus) per a panoràmiques parcials: la vista no surt de la zona
+   * realment gravada. yaw: [mín, màx] en el sentit creixent del yaw; pitch: [mín, màx].
+   */
+  limits?: { yaw: [number, number]; pitch: [number, number] };
 }
 
 const FOV_DEFAULT = 78;
@@ -38,7 +43,7 @@ type Tween = { start: number; dur: number; update: (t: number) => void; done?: (
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 export const PanoramaViewer = forwardRef<ViewerHandle, Props>(function PanoramaViewer(
-  { scene, onNavigate, onStatus, onView, onFirstInteraction, reducedMotion = false, retryKey = 0 },
+  { scene, onNavigate, onStatus, onView, onFirstInteraction, reducedMotion = false, retryKey = 0, limits },
   ref
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -62,6 +67,7 @@ export const PanoramaViewer = forwardRef<ViewerHandle, Props>(function PanoramaV
     dragging: false,
     interacted: false,
     autoRotate: true,
+    rotDir: 1,
     tweens: [] as Tween[],
     dirty: true,
     textures: new Map<string, THREE.Texture>(),
@@ -73,8 +79,8 @@ export const PanoramaViewer = forwardRef<ViewerHandle, Props>(function PanoramaV
     lastViewEmit: '',
   });
 
-  const props = useRef({ onNavigate, onStatus, onView, onFirstInteraction, reducedMotion });
-  props.current = { onNavigate, onStatus, onView, onFirstInteraction, reducedMotion };
+  const props = useRef({ onNavigate, onStatus, onView, onFirstInteraction, reducedMotion, limits });
+  props.current = { onNavigate, onStatus, onView, onFirstInteraction, reducedMotion, limits };
 
   const markInteracted = useCallback(() => {
     const s = S.current;
@@ -170,8 +176,25 @@ export const PanoramaViewer = forwardRef<ViewerHandle, Props>(function PanoramaV
         s.dirty = true;
       }
       if (s.autoRotate && !props.current.reducedMotion && s.current?.visible && !s.tweens.length) {
-        s.yaw += 2.2 * dt;
+        s.yaw += 2.2 * dt * s.rotDir;
         s.dirty = true;
+      }
+      // Panoràmica parcial: la mirada es queda dins de la zona gravada
+      const lim = props.current.limits;
+      if (lim && s.dirty) {
+        const centre = (lim.yaw[0] + lim.yaw[1]) / 2;
+        const half = (lim.yaw[1] - lim.yaw[0]) / 2;
+        const d = shortestDelta(centre, wrapDeg(s.yaw));
+        if (half < 180 && Math.abs(d) > half) {
+          s.yaw -= d - Math.sign(d) * half;
+          s.vYaw = 0;
+          s.rotDir = -Math.sign(d);
+        }
+        const p = clamp(s.pitch, lim.pitch[0], lim.pitch[1]);
+        if (p !== s.pitch) {
+          s.pitch = p;
+          s.vPitch = 0;
+        }
       }
       if (!s.dirty) return;
       s.dirty = false;

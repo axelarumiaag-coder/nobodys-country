@@ -67,7 +67,7 @@ export interface Property {
   featured?: boolean;
   plan?: FloorPlanData;
   /** Espais identificats visualment (només per a habitatges reals) */
-  spaces?: { id: string; name: string; image: string }[];
+  spaces?: { id: string; name: string; image: string; has360?: boolean }[];
   /** Vídeo de recorregut editat (sense àudio) amb capítols */
   video?: { src: string; webm?: string; poster: string; duration: number; chapters: { stop: string; label: string; start: number }[] };
 }

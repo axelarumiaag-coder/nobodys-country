@@ -3389,3 +3389,90 @@ body.is-tour {
 .ftour .tour__notice-btn {
   white-space: nowrap;
 }
+
+/* Panoràmica 360° recreada dins del recorregut */
+.ftour__pano {
+  position: absolute;
+  inset: 0;
+}
+.ftour__pano .viewer {
+  z-index: 0;
+}
+.ftour__pano-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 170px;
+  transform: translateX(-50%);
+  margin: 0;
+  max-width: calc(100% - 40px);
+  text-align: center;
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(27, 26, 24, 0.6);
+  color: rgba(250, 247, 241, 0.9);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.ftour__modes {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 10px auto 0;
+  padding: 4px;
+  width: max-content;
+  border-radius: 999px;
+  background: rgba(27, 26, 24, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+.ftour__modes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: transparent;
+  color: rgba(250, 247, 241, 0.85);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
+.ftour__modes button.is-active {
+  background: var(--paper);
+  color: var(--ink);
+}
+.ftour .tour__room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ftour__tag {
+  margin-left: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--olive);
+}
+.ftour.is-360 .ftour__backdrop {
+  opacity: 0.4;
+}
+@media (max-width: 760px) {
+  .ftour__pano-caption {
+    bottom: 120px;
+    font-size: 0.7rem;
+  }
+}
+.ftour__stage[hidden] {
+  display: none;
+}
+@media (max-width: 760px) {
+  .ftour__long {
+    display: none;
+  }
+}
