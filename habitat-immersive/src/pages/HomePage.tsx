@@ -56,10 +56,10 @@ export function HomePage() {
               {realProperty.title}
             </h2>
             <p className="lead">{realProperty.summary}</p>
-            <p className="muted">Preu i ubicació a consultar. Tot el material prové d'un vídeo real gravat amb mòbil.</p>
+            <p className="muted">Preu i ubicació a consultar. De moment només s'ha fotografiat aquesta habitació: entra-hi i mira al voltant en 360°.</p>
             <div className="tour-feature__actions">
               <Link to={`/visita/${realProperty.tourId}`} className="btn btn--primary">
-                <Icon name="door" /> Explora la casa
+                <Icon name="pano" /> Entra a l'habitació
               </Link>
               <Link to={`/habitatges/${realProperty.slug}`} className="link-arrow">
                 Veure la fitxa <Icon name="arrowRight" size={18} />

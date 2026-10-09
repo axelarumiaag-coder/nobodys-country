@@ -186,10 +186,10 @@ proveïdor. Això queda fora d'aquesta demo.
 
 ## 7. Proves
 
-- `npm test`: 17 proves unitàries (filtres i ordenació, dades pendents de l'habitatge real, serialització a la URL, validació del
+- `npm test`: 16 proves unitàries (filtres i ordenació, dades pendents de l'habitatge real, serialització a la URL, validació del
   formulari, connexió de les quatre estances, conversions de coordenades i existència de tots els
   recursos referenciats).
-- `npm run test:e2e`: 13 escenaris amb Chromium real (inclosos 3 de l'habitatge real: fitxa, vídeo, recorregut i errors de càrrega): portada, cercador, navegació a seccions,
+- `npm run test:e2e`: 12 escenaris amb Chromium real (inclosos 2 de l'habitació real: fitxa i visita 360°): portada, cercador, navegació a seccions,
   catàleg amb tots els filtres i l'ordenació, fitxa (galeria, lightbox, plànol, formulari amb errors i
   confirmació, similars), visor 360° (canvas renderitzat, arrossegament amb ratolí, roda i botons de
   zoom, clic a punts de navegació, plànol sincronitzat, URL per estança, pantalla completa, avís de
@@ -214,84 +214,57 @@ habitat-immersive/
     └── styles/global.css  identitat visual i animacions
 ```
 
-## 9. Habitatge real a partir d'un vídeo
+## 9. Habitatge real: una habitació en 360°
 
-La fitxa **«Habitatge amb terrassa»** (`/habitatges/casa-real-terrassa`) és una casa real incorporada a
-partir d'un vídeo gravat amb mòbil. No té dades comercials inventades: preu, ubicació, superfícies,
-habitacions i banys es mostren com a «Preu a consultar» o «Informació pendent».
+La fitxa **«Habitació real en 360°»** (`/habitatges/habitacio-real`) és un habitatge real del qual, de moment,
+només s'ha fotografiat una estança: un dormitori. No té dades comercials inventades: preu, ubicació,
+superfícies, habitacions i banys es mostren com a «Preu a consultar» o «Informació pendent», i no hi ha plànol.
 
-**Què s'ha pogut extreure del vídeo** (98 s, 576 × 1024 vertical, ~31,6 fps, gravat a mà caminant):
-entrada amb porta de fusta, passadís (amb el bany vist de lluny), sala d'estar amb finestral i llar de foc,
-zona de menjador, terrassa àmplia amb zona coberta, jardineres i caseta de fusta, cuina i un dormitori.
-Hi ha molts trams moguts o foscos (sobretot la cuina) i la càmera es desplaça mentre gira.
+**Com s'ha fet la panoràmica.** Amb 10 fotos fetes amb un iPhone 16 (objectiu 0,5×) des del centre de
+l'habitació: les quatre cantonades de dalt, les quatre de baix, el sostre i el terra.
+`scripts/video/sphere_from_photos.py` les converteix en una panoràmica equirectangular de 4096 × 2048:
 
-**Recreació 360° a partir del vídeo.** Als trams on la càmera gira sobre si mateixa,
-`scripts/video/pano360.py` reconstrueix una panoràmica equirectangular de veritat:
+1. aparella punts característics (SIFT) entre totes les fotos;
+2. calcula la rotació entre cada parella (H = K·R·K⁻¹) amb la focal de l'objectiu (13 mm equivalents);
+3. ajusta totes les rotacions alhora (mínims quadrats robustos, SciPy) i fixa la vertical amb el sostre i el terra;
+4. projecta cada foto a l'esfera, iguala l'exposició i les barreja (multibanda);
+5. omple amb un degradat suau les poques zones que cap foto va captar (un 4,5 % de l'esfera).
 
-1. tria fotogrames nítids i espaiats del tram;
-2. aparella punts característics (SIFT) entre fotogrames;
-3. estima la rotació de la càmera de cada fotograma (model de rotació pura + ajust de feixos) i redreça l'horitzó;
-4. projecta cada fotograma sobre una esfera: amb el projector esfèric d'OpenCV, la sortida ja és
-   equirectangular i cada fotograma queda a la seva longitud i latitud reals;
-5. barreja els fotogrames (compensació d'exposició, costures i barreja multibanda);
-6. omple la part no gravada amb una continuació molt difuminada dels colors veïns, sense inventar detalls,
-   i desa el rang realment cobert.
+Resultat: les 10 fotos encaixen i cobreixen el 95,5 % de l'esfera. Es veuen algunes costures, pròpies de fer
+les fotos a mà; amb 4 fotos més (una al mig de cada paret, amb el mòbil recte) desapareixerien els buits.
 
-Resultat amb aquest vídeo:
+**Privacitat.** Abans de projectar-les s'han difuminat a les fotos un retrat dibuixat, uns petits quadres de
+la paret i una placa amb un número; també s'han descartat les zones on surt la persona que fa les fotos.
+Les 10 fotos originals no es pugen al repositori.
 
-| Espai | Graus horitzontals gravats | Fotogrames |
-| --- | --- | --- |
-| Terrassa | 181° | 23 |
-| Menjador → cuina | 130° | 22 |
-| Sala (finestral) | 76° | 9 |
+La galeria de la fitxa són vistes extretes de la mateixa panoràmica (`scripts/video/views_from_pano.py`).
+La visita (`/visita/habitacio-real`) fa servir el mateix visor Three.js que les visites de demostració.
 
-La sala sencera, l'entrada i el dormitori **no** s'han pogut reconstruir: la càmera avança mentre gira i
-la imatge és massa moguda, i l'estimació divergeix. Aquests espais es mostren amb fotogrames reals.
+### Tornar-la a generar (o fer-ne una altra)
 
-Al recorregut (`/visita/casa-real`), els espais amb panoràmica s'obren en **«360° recreat»** amb el
-mateix visor Three.js de les visites de demostració. La mirada queda limitada a la zona gravada, i un
-selector permet passar als **fotogrames** originals. Per a la resta d'espais hi ha:
+Requisits locals i gratuïts: Python 3 amb `opencv-python-headless`, `numpy` i `scipy`.
 
-- **Recorregut amb fotogrames**: set espais en l'ordre del vídeo; dins de cada espai es «gira» passant
-  d'un fotograma real a un altre (fletxes, teclat o lliscar); hi ha punts de navegació on el pas cap a
-  l'altre espai es veu a la imatge, zoom, pantalla completa i una tira del recorregut.
-- **Vídeo per capítols** a la fitxa i dins del recorregut: un muntatge de ~30 s sense àudio.
+```bash
+python3 scripts/video/sphere_from_photos.py <carpeta-amb-fotos> public/media/real/habitacio/dormitori.jpg \
+  --width 4096 --scale 0.6 --low-priority 7,8 \
+  --mask "7:0.68,0,1,0.16" "8:0.22,0.7,0.78,1" \
+  --privacy "1:0.18,0.05,0.44,0.34" ...
+python3 scripts/video/views_from_pano.py public/media/real/habitacio/dormitori.jpg public/media/real/habitacio/fotos \
+  1:62:-6:92 2:196:-4:72 3:252:-10:88 4:22:-3:84
+```
 
-**Privacitat.** S'han exclòs els fragments i fotogrames on surten un retrat d'una persona, el televisor,
-fotos personals de la nevera i d'un prestatge, un dibuix d'una cara i una placa amb un número; la
-panoràmica de la sala s'ha limitat al tram on no apareix el retrat. El vídeo publicat no té àudio. El
-vídeo original **no** es puja al repositori (`media-source/` és a `.gitignore`).
+- `--privacy foto:x0,y0,x1,y1` difumina una zona d'una foto (fraccions de 0 a 1) abans de projectar-la.
+- `--mask foto:x0,y0,x1,y1` fa que aquella zona no s'utilitzi (persones, reflexos).
+- `--low-priority` dona menys pes a les fotos de sostre i terra on se solapen amb altres.
+- `--blur yaw0,pitch0,yaw1,pitch1` difumina una zona de la panoràmica final (graus).
 
-### Tornar a processar el vídeo (o afegir-ne un altre)
+Per afegir-hi més estances, fes el mateix a cada habitació i afegeix-les com a escenes a `src/data/tours.ts`
+(amb `links` en graus per passar d'una a l'altra) i, si en tens les mides, un plànol a la fitxa.
 
-Requisits locals i gratuïts: FFmpeg i Python 3 amb `opencv-python-headless` i `numpy`
-(`pip install opencv-python-headless numpy`).
+**Consells per fer les fotos:** al centre de l'habitació, sense moure't de lloc; objectiu 0,5×; bloqueig
+AE/AF; format «Més compatible» (JPG); 4 fotos a les cantonades de dalt, 4 a les de baix, 4 al mig de cada
+paret (recte), sostre i terra; llums enceses i res personal a la vista. Envia els fitxers originals, no per
+WhatsApp, que en redueix la qualitat.
 
-1. Copia el vídeo a `media-source/casa-real/original.mp4`. No es modifica mai.
-2. Edita `scripts/video/casa-real.config.json`: per a cada espai, les finestres de temps
-   (`from`/`to`, en segons) d'on triar el fotograma més nítid, i els trams del vídeo editat. Les
-   finestres serveixen també per deixar fora els moments amb dades personals. Si cal, una vista pot
-   difuminar zones amb `"blur": [[x, y, amplada, alçada]]` (en fraccions de la imatge).
-3. Executa `python3 scripts/video/process_video.py scripts/video/casa-real.config.json` (fotogrames i vídeo)
-   i `python3 scripts/video/build_panos.py` (panoràmiques 360° recreades; els trams es configuren al mateix script).
-
-L'script tria el fotograma més nítid de cada finestra (variància del laplacià), descarta els que són
-gairebé idèntics a un altre ja triat (hash perceptual), aplica un ajust suau (contrast local, brillantor
-en escenes fosques, nitidesa lleugera) i desa:
-
-- `public/media/real/casa-real/frames/*.jpg` (1024 px d'alçada) i `*-sm.jpg` (miniatures de 480 px);
-- `recorregut.mp4` (H.264) i `recorregut.webm` (VP9), sense àudio, amb el pòster;
-- `src/data/casa-real.generated.json`, que la web importa.
-
-Els textos, els punts de navegació (posició en % sobre el fotograma) i les miniatures de cada espai
-es defineixen a `src/data/realHouse.ts`.
-
-### Per a una experiència 360° real de més qualitat
-
-- Una càmera 360° (p. ex. de la gamma de consum) o el mode panoràmica esfèrica d'un mòbil, amb trípode,
-  fent **una presa per estança** des del centre, sense moure's, amb bona llum.
-- Exportar en equirectangular 2:1 (idealment 6000 × 3000 o més) i afegir-les com s'explica a §4: el
-  visor 360° de la web ja les admet, amb punts de navegació i plànol.
-- Per a una reconstrucció 3D navegable de veritat (desplaçament lliure) caldria una captura específica
-  (fotogrametria o *Gaussian splatting* amb centenars de fotos nítides o un escàner LiDAR), fora de
-  l'abast d'un vídeo de mòbil com aquest.
+`scripts/video/pano360.py` encara permet provar de muntar panoràmiques a partir d'un vídeo on la càmera gira,
+però amb un vídeo de mòbil caminant el resultat és parcial: per això s'ha substituït per les fotos.

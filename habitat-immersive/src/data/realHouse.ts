@@ -1,93 +1,29 @@
-// Habitatge real incorporat a partir d'un vídeo gravat amb mòbil.
-// Les imatges i el recorregut es generen amb scripts/video/process_video.py a partir de
-// scripts/video/casa-real.config.json. Aquí només s'hi afegeix el que el vídeo no pot donar:
-// textos i la posició dels punts de navegació sobre els fotogrames.
+// Habitatge real: de moment només se n'ha fotografiat una estança (un dormitori).
+// La panoràmica 360° s'ha muntat amb scripts/video/sphere_from_photos.py a partir de 10 fotos
+// fetes amb un iPhone (objectiu 0,5×) des del centre de l'habitació. Les fotos de la galeria són
+// vistes extretes de la mateixa panoràmica (scripts/video/views_from_pano.py).
 //
 // IMPORTANT: no s'ha inventat cap dada comercial. Preu, ubicació, superfícies, nombre
 // d'habitacions i banys queden com a «pendents» fins que el propietari els proporcioni.
-import generated from './casa-real.generated.json';
-import panos from './casa-real.panos.json';
 import type { Property } from './types';
 
-export interface FrameHotspot {
-  /** Posició sobre el fotograma, en % (0–100) */
-  x: number;
-  y: number;
-  label: string;
-  /** Parada de destinació; si no n'hi ha, és un punt informatiu */
-  to?: string;
-}
-export interface FrameView {
-  id: string;
-  label: string;
-  src: string;
-  width: number;
-  height: number;
-  /** Segon del vídeo original d'on prové el fotograma */
-  time: number;
-  hotspots: FrameHotspot[];
-}
-/** Panoràmica 360° recreada a partir dels fotogrames on la càmera gira (scripts/video/pano360.py) */
-export interface PanoInfo {
-  full: string;
-  preview: string;
-  label?: string | null;
-  frames: number;
-  /** Fracció de l'esfera coberta per imatge gravada */
-  coverage: number;
-  horizontalDegrees: number;
-  /** Rang gravat, en graus amb la convenció del visor */
-  yaw: number[];
-  pitch: number[];
-}
-export interface FrameStop {
-  id: string;
-  name: string;
-  views: FrameView[];
-  pano?: PanoInfo;
-}
-export interface FrameTour {
-  id: string;
-  propertySlug: string;
-  title: string;
-  notice: string;
-  stops: FrameStop[];
-}
+const BASE = '/media/real/habitacio';
+const foto = (n: number, alt: string) => ({ src: `${BASE}/fotos/${n}`, alt });
 
-// Punts situats on el pas cap a l'altre espai és visible al fotograma
-const HOTSPOTS: Record<string, FrameHotspot[]> = {
-  'entrada/acces-sala': [{ x: 56, y: 60, label: "Entra a la sala d'estar", to: 'sala' }],
-  'passadis/passadis': [{ x: 30, y: 52, label: 'Bany (només es veu des del passadís)' }],
-  'sala/finestral': [{ x: 52, y: 58, label: 'Surt a la terrassa', to: 'terrassa' }],
-  'menjador/acces-cuina': [{ x: 88, y: 48, label: 'Passa a la cuina', to: 'cuina' }],
+export const REAL_TOUR_ID = 'habitacio-real';
+
+export const realPano = {
+  full: `${BASE}/dormitori.jpg`,
+  preview: `${BASE}/dormitori-preview.jpg`,
+  /** Fotos utilitzades i fracció de l'esfera coberta per imatge real */
+  photos: 10,
+  coverage: 0.955,
 };
-
-export const realTour: FrameTour = {
-  id: 'casa-real',
-  propertySlug: 'casa-real-terrassa',
-  title: 'Habitatge amb terrassa',
-  notice:
-    'Recorregut creat a partir d’un vídeo gravat amb mòbil. A la terrassa, la cuina i la sala, els fotogrames on la càmera gira s’han projectat sobre una esfera per recrear una vista 360° parcial: la part que el vídeo no va gravar es mostra difuminada, sense inventar-ne detalls. No és una reconstrucció 3D ni permet desplaçar-se lliurement.',
-  stops: generated.stops.map((s) => ({
-    id: s.id,
-    name: s.name,
-    views: s.views.map((v) => ({ id: v.id, label: v.label, src: v.src, width: v.width, height: v.height, time: v.time, hotspots: HOTSPOTS[`${s.id}/${v.id}`] ?? [] })),
-    pano: (panos as Record<string, PanoInfo>)[s.id],
-  })),
-};
-
-const view = (stop: string, id: string) => {
-  const v = realTour.stops.find((s) => s.id === stop)!.views.find((x) => x.id === id)!;
-  return { src: v.src, alt: v.label, widths: [Math.round((v.width * 480) / v.height), v.width] as [number, number], portrait: true };
-};
-
-// Fotograma més representatiu de cada espai (per a miniatures)
-const COVER: Record<string, string> = { entrada: 'acces-sala', sala: 'finestral', menjador: 'taula', terrassa: 'vistes', cuina: 'taulell', dormitori: 'prestatges' };
 
 export const realProperty: Property = {
-  slug: 'casa-real-terrassa',
+  slug: 'habitacio-real',
   reference: 'HI-REAL-001',
-  title: 'Habitatge amb terrassa',
+  title: 'Habitació real en 360°',
   kind: 'real',
   operation: null,
   type: 'Habitatge',
@@ -101,39 +37,18 @@ export const realProperty: Property = {
   year: null,
   energy: null,
   featured: true,
-  tourId: 'casa-real',
-  tourKind: 'frames',
-  summary:
-    'Un habitatge real presentat a partir d’un vídeo: sala d’estar amb finestral, zona de menjador, cuina i una terrassa àmplia amb vistes als terrats veïns. La terrassa, la cuina i la sala es poden explorar en 360° recreat a partir del mateix vídeo.',
+  tourId: REAL_TOUR_ID,
+  summary: 'Un dormitori real fotografiat amb un iPhone i convertit en una visita 360°. De moment és l’única estança disponible d’aquest habitatge.',
   description: [
-    'Aquesta fitxa s’ha preparat exclusivament a partir d’un vídeo gravat amb mòbil. La descripció es limita al que s’hi veu; les dades comercials s’afegiran quan el propietari les confirmi.',
-    'Des de l’entrada, una porta de fusta treballada i un pas en arc donen a la sala d’estar, amb parets de color terracota, terra de rajola i un gran finestral amb cortines que dona a la terrassa. Al vídeo també s’hi veu una llar de foc amb revestiment de pedra.',
-    'La zona de menjador té mobles de fusta, un moble escriptori i una taula. La cuina, amb mobles de fusta i taulell fosc, inclou una columna amb forn i microones i armaris alts.',
-    'La terrassa és l’espai més ampli del vídeo: paviment de rajola, una zona coberta, jardineres, una caseta de fusta i vistes obertes als habitatges veïns. El recorregut acaba en un dormitori amb prestatges de llibres; també s’hi veuen un passadís i, de lluny, un bany.',
+    'Aquesta fitxa es basa exclusivament en les fotos d’una habitació. La descripció es limita al que s’hi veu; les dades de l’habitatge s’afegiran quan el propietari les confirmi.',
+    'És un dormitori amb un llit, un armari de fusta de pi de dues portes, un escriptori amb cadira i flexo, i prestatges amb llibres a la paret. Té terra de fusta, parets blanques amb gotelé, un radiador i una porta interior.',
+    'Pots entrar-hi i mirar al voltant en 360°: la panoràmica s’ha muntat amb deu fotos fetes des del centre de l’habitació.',
   ],
-  features: [
-    'Terrassa amb zona coberta i jardineres',
-    'Caseta de fusta a la terrassa',
-    'Finestral amb sortida a la terrassa',
-    'Llar de foc amb revestiment de pedra',
-    'Cuina amb columna de forn i microones',
-    'Terra de rajola a la zona de dia',
-  ],
+  features: ['Armari de fusta de dues portes', 'Escriptori amb cadira', 'Prestatges per a llibres', 'Terra de fusta', 'Radiador', 'Llum de sostre'],
   images: [
-    view('terrassa', 'caseta'),
-    view('sala', 'finestral'),
-    view('entrada', 'acces-sala'),
-    view('menjador', 'taula'),
-    view('cuina', 'taulell'),
-    view('terrassa', 'vistes'),
-    view('terrassa', 'jardineres'),
-    view('dormitori', 'prestatges'),
+    foto(1, 'Escriptori amb cadira, flexo i prestatges de llibres'),
+    foto(2, 'Armari de fusta de pi de dues portes'),
+    foto(3, 'Llit al costat de l’armari'),
+    foto(4, 'Porta de l’habitació'),
   ],
-  spaces: realTour.stops.map((s) => ({
-    id: s.id,
-    name: s.name,
-    image: (s.views.find((v) => v.id === COVER[s.id]) ?? s.views[0]).src,
-    has360: !!s.pano,
-  })),
-  video: generated.clip,
 };

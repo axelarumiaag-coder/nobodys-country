@@ -7,7 +7,7 @@ export interface PropertyImage {
   alt: string;
   /** Mides reals [petita, gran] en píxels d'amplada, si no són les estàndard (800 / 1600) */
   widths?: [number, number];
-  /** Imatge vertical (p. ex. fotogrames de vídeo de mòbil) */
+  /** Imatge vertical (p. ex. fotos de mòbil) */
   portrait?: boolean;
 }
 
@@ -35,7 +35,7 @@ export interface FloorPlanData {
 
 /**
  * Un habitatge del catàleg. Els camps comercials poden ser `null` quan la dada no s'ha
- * proporcionat (p. ex. una propietat real afegida a partir d'un vídeo): la interfície
+ * proporcionat (p. ex. una propietat real afegida a partir de fotos): la interfície
  * mostra «Preu a consultar» o «Informació pendent» en lloc d'inventar-la.
  */
 export interface Property {
@@ -62,12 +62,6 @@ export interface Property {
   features: string[];
   images: PropertyImage[];
   tourId?: string;
-  /** Tipus d'experiència: panoràmiques 360° o recorregut visual amb fotogrames reals */
-  tourKind?: '360' | 'frames';
   featured?: boolean;
   plan?: FloorPlanData;
-  /** Espais identificats visualment (només per a habitatges reals) */
-  spaces?: { id: string; name: string; image: string; has360?: boolean }[];
-  /** Vídeo de recorregut editat (sense àudio) amb capítols */
-  video?: { src: string; webm?: string; poster: string; duration: number; chapters: { stop: string; label: string; start: number }[] };
 }

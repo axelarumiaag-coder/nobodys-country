@@ -4,8 +4,8 @@ import { properties } from '../data/properties';
 import { shortestDelta, vectorToView, viewToVector, wrapDeg } from './sphere';
 
 describe('visita virtual', () => {
-  it('cada visita té les quatre estances connectades', () => {
-    for (const t of Object.values(tours)) {
+  it('cada visita de demostració té les quatre estances connectades', () => {
+    for (const t of Object.values(tours).filter((x) => x.id !== 'habitacio-real')) {
       expect(Object.keys(t.scenes).sort()).toEqual(['cuina', 'dormitori', 'dormitori2', 'sala']);
       for (const s of Object.values(t.scenes)) {
         expect(s.links.length).toBeGreaterThan(0);

@@ -7,3 +7,4 @@ dist-static
 # Vídeos originals: no es pugen al repositori (privacitat i mida)
 media-source/
 *.tsbuildinfo
+__pycache__/

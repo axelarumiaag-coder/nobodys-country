@@ -35,7 +35,7 @@ export function CatalogPage() {
         <header className="page__head">
           <p className="eyebrow">Catàleg</p>
           <h1 className="page__title">Habitatges</h1>
-          <p className="lead">Una casa real presentada a partir d'un vídeo i sis habitatges de demostració ficticis a Catalunya.</p>
+          <p className="lead">Una habitació real en 360° i sis habitatges de demostració ficticis a Catalunya.</p>
         </header>
 
         <div className="catalog__layout">

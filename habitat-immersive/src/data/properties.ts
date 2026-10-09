@@ -1,6 +1,6 @@
 // Catàleg. Els anuncis de `demoProperties` són FICTICIS: preus, adreces i característiques
 // s'han inventat per a aquesta demo. `realProperty` és un habitatge real afegit a partir d'un
-// vídeo (vegeu realHouse.ts): no té dades comercials inventades.
+// conjunt de fotos d'una habitació (vegeu realHouse.ts): no té dades comercials inventades.
 import type { FloorPlanData, Property } from './types';
 import layout from './demoTourLayout.json';
 import { realProperty } from './realHouse';

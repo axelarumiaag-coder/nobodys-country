@@ -362,145 +362,55 @@ await test('Recursos absents: imatges i panoràmiques tenen alternativa', async 
   await page.context().close();
 });
 
-await test('Casa real: portada, llistat, fitxa, imatges i vídeo', async () => {
+await test('Habitació real: portada, llistat, fitxa i imatges', async () => {
   const page = await newPage();
   await page.goto(BASE + '/');
   await page.locator('.real-band').scrollIntoViewIfNeeded();
-  assert((await page.locator('#real-title').innerText()) === 'Habitatge amb terrassa', 'Franja de la casa real a la portada');
-  assert((await page.locator('.section .grid--cards .card', { hasText: 'Habitatge amb terrassa' }).count()) === 1, 'Destacada a la portada');
+  assert((await page.locator('#real-title').innerText()) === 'Habitació real en 360°', 'Franja de l’habitació real a la portada');
+  assert((await page.locator('.section .grid--cards .card', { hasText: 'Habitació real en 360°' }).count()) === 1, 'Destacada a la portada');
   await page.goto(BASE + '/habitatges');
-  const card = page.locator('.card', { hasText: 'Habitatge amb terrassa' });
+  const card = page.locator('.card', { hasText: 'Habitació real en 360°' });
   assert((await card.locator('.badge--real').count()) === 1, 'Distintiu «Habitatge real» al llistat');
+  assert((await card.locator('.badge--tour').count()) === 1, 'Indicador de visita 360°');
   assert((await card.locator('.card__price').innerText()) === 'Preu a consultar', 'Preu a consultar al llistat');
   await card.click();
-  await page.waitForURL(/\/habitatges\/casa-real-terrassa$/);
-  assert((await waitText(page, 'h1', 'Habitatge amb terrassa')).includes('Habitatge amb terrassa'), 'Títol de la fitxa');
+  await page.waitForURL(/\/habitatges\/habitacio-real$/);
+  assert((await waitText(page, 'h1', 'Habitació real en 360°')).includes('Habitació real'), 'Títol de la fitxa');
   assert((await page.locator('.property__price').innerText()) === 'Preu a consultar', 'Preu pendent');
   assert((await page.locator('.facts li.is-pending').count()) >= 5, 'Dades comercials pendents');
-  assert((await count(page, '.explore__space')) === 7, 'Set espais identificats');
   await page.waitForFunction(() => [...document.querySelectorAll('.explore img, .gallery__main img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15000 });
-  await page.getByRole('button', { name: 'Imatge següent' }).first().click();
-  await page.waitForFunction(() => document.querySelector('.gallery__main img')?.naturalWidth > 0);
-  // vídeo amb capítols
-  const v = page.locator('.vchap video').first();
-  await v.scrollIntoViewIfNeeded();
-  await page.waitForFunction(() => document.querySelector('.vchap video')?.readyState >= 1, null, { timeout: 15000 });
-  assert(await v.evaluate((el) => el.muted && el.duration > 25 && el.duration < 40), 'Vídeo editat sense àudio (~30 s)');
-  await page.locator('.vchap__chapters button', { hasText: 'Terrassa' }).click();
-  await page.waitForFunction(() => document.querySelector('.vchap__chapters .is-active')?.textContent.includes('Terrassa'), null, { timeout: 8000 });
-  await page.evaluate(() => document.querySelector('.vchap video').pause());
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-  await page.waitForTimeout(700);
+  assert((await page.locator('.gallery__thumb').count()) === 4, 'Quatre vistes a la galeria');
+  assert((await page.content()).includes('vídeo') === false, 'No queden textos del vídeo anterior');
   await shot(page, 'desktop-real-fitxa');
   noErrors(page);
   await page.context().close();
 });
 
-await test('Casa real: recorregut visual (girar, punts, recorregut, zoom, vídeo, tornar)', async () => {
+await test('Habitació real: visita 360° (mirar, zoom, sense plànol, tornar)', async () => {
   const page = await newPage();
-  const state = () => page.locator('.ftour').evaluate((el) => ({ ...el.dataset }));
-  const waitView = (stop, view) =>
-    page.waitForFunction(
-      ([s, v]) => {
-        const d = document.querySelector('.ftour')?.dataset;
-        return d?.stop === s && (!v || d.view === v) && d.status === 'ready';
-      },
-      [stop, view],
-      { timeout: 15000 }
-    );
-  await page.goto(BASE + '/habitatges/casa-real-terrassa');
-  await page.getByRole('link', { name: 'Comença el recorregut' }).click();
-  await page.waitForURL(/\/visita\/casa-real/);
-  await waitView('entrada', 'acces-sala');
-  assert((await page.getByTestId('current-room').innerText()) === 'Entrada', 'Indicador d’espai');
-  assert((await page.locator('.ftour__zoom img').evaluate((i) => i.naturalWidth)) > 0, 'Imatge carregada');
-  // girar
-  await page.getByRole('button', { name: 'Gira: vista següent' }).click();
-  await waitView('entrada', 'porta');
-  await page.keyboard.press('ArrowLeft');
-  await waitView('entrada', 'acces-sala');
-  await shot(page, 'desktop-real-tour');
-  // punt de navegació cap a la sala
-  await page.locator('.ftour__hotspot[data-to=sala]').click();
-  await waitView('sala');
-  assert((await page.getByTestId('current-room').innerText()) === "Sala d'estar", 'Ara a la sala');
-  // la sala té panoràmica recreada: s'obre en 360° i es pot canviar als fotogrames
-  assert((await page.locator('.ftour').getAttribute('data-mode')) === '360', 'La sala s’obre en 360° recreat');
-  await page.getByRole('radio', { name: /Fotogrames/ }).click();
-  await waitView('sala');
-  assert(new URL(page.url()).searchParams.get('parada') === 'sala', 'URL per espai');
-  // girar fins al finestral i sortir a la terrassa
-  for (let i = 0; i < 4 && (await state()).view !== 'finestral'; i++) {
-    await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(250);
-  }
-  await waitView('sala', 'finestral');
-  await page.locator('.ftour__hotspot[data-to=terrassa]').click();
-  await waitView('terrassa');
-  // tornar al 360° recreat de la terrassa: arrossegar gira la vista dins de la zona gravada
-  await page.getByRole('radio', { name: /360° recreat/ }).click();
-  await page.waitForFunction(() => document.querySelector('.ftour')?.dataset.mode === '360' && document.querySelector('.viewer')?.dataset.hires === 'terrassa', null, {
-    timeout: 60000,
-  });
-  const y0 = Number(await page.locator('.viewer').getAttribute('data-yaw'));
+  await page.goto(BASE + '/habitatges/habitacio-real');
+  await page.getByRole('link', { name: /Comença la visita 360°/ }).click();
+  await page.waitForURL(/\/visita\/habitacio-real/);
+  await waitScene(page, 'dormitori', true);
+  assert((await page.getByTestId('current-room').innerText()) === 'Dormitori', 'Indicador d’estança');
+  assert((await page.locator('.tour__plan').count()) === 0, 'Sense plànol inventat');
+  const a = await viewerData(page);
   await page.mouse.move(720, 450);
   await page.mouse.down();
-  await page.mouse.move(420, 420, { steps: 12 });
+  await page.mouse.move(380, 350, { steps: 12 });
   await page.mouse.up();
-  await page.waitForTimeout(300);
-  const y1 = Number(await page.locator('.viewer').getAttribute('data-yaw'));
-  assert(Math.abs(y1 - y0) > 10, `El 360° recreat no gira (${y0} → ${y1})`);
-  for (let i = 0; i < 4; i++) {
-    await page.mouse.move(200, 450);
-    await page.mouse.down();
-    await page.mouse.move(1300, 450, { steps: 10 });
-    await page.mouse.up();
-  }
-  await page.waitForTimeout(500);
-  const y2 = Number(await page.locator('.viewer').getAttribute('data-yaw'));
-  assert(y2 > 80 && y2 < 260, `La vista hauria de quedar dins de la zona gravada (${y2})`);
-  await shot(page, 'desktop-real-360');
-  await page.getByRole('radio', { name: /Fotogrames/ }).click();
-  await shot(page, 'desktop-real-terrassa');
-  // tira del recorregut
-  await page.locator('.ftour__strip button', { hasText: 'Cuina' }).click();
-  await waitView('cuina');
-  assert((await page.locator('.ftour__strip button.is-active').innerText()).includes('Cuina'), 'Recorregut ressalta l’espai');
-  await page.getByRole('button', { name: 'Espai següent' }).click();
-  await waitView('dormitori');
-  // zoom
+  await page.waitForTimeout(200);
+  const b = await viewerData(page);
+  assert(Math.abs(Number(b.yaw) - Number(a.yaw)) > 10, `El 360° no gira (${a.yaw} → ${b.yaw})`);
   await page.getByRole('button', { name: 'Apropa' }).click();
-  await page.waitForTimeout(350);
-  assert((await page.locator('.ftour__zoom').getAttribute('style')).includes('scale(1.4)'), 'El zoom apropa');
-  await page.getByRole('button', { name: 'Allunya' }).click();
-  // vídeo dins del recorregut
-  await page.getByRole('button', { name: "Mira el vídeo d'aquest espai" }).click();
-  await page.waitForSelector('.ftour__video video');
-  await page.keyboard.press('Escape');
-  await page.waitForSelector('.ftour__video', { state: 'detached' });
-  // avís honest
-  await page.getByRole('button', { name: /360° parcial recreat/ }).click();
-  assert((await page.locator('.tour__notice p').innerText()).includes('sense inventar-ne detalls'), 'Avís honest');
+  await page.waitForTimeout(400);
+  assert(Number((await viewerData(page)).fov) < Number(b.fov), 'El zoom apropa');
+  await page.getByRole('button', { name: /Panoràmica feta amb fotos reals/ }).click();
+  assert((await page.locator('.tour__notice p').innerText()).includes('fotos reals'), 'Avís de com s’ha fet');
+  await shot(page, 'desktop-real-360');
   await page.getByRole('link', { name: "Torna a la fitxa de l'immoble" }).click();
-  await page.waitForURL(/\/habitatges\/casa-real-terrassa$/);
+  await page.waitForURL(/\/habitatges\/habitacio-real$/);
   noErrors(page);
-  await page.context().close();
-});
-
-await test('Casa real: una vista que no carrega mostra alternativa i reintent', async () => {
-  const page = await newPage();
-  await page.route('**/media/real/casa-real/frames/sala-*', (r) => r.abort());
-  await page.goto(BASE + '/visita/casa-real?parada=sala&modo=fotogrames');
-  await page.waitForSelector('.ftour__failed');
-  assert((await page.locator('.ftour__strip button').count()) === 7, 'La resta del recorregut continua funcionant');
-  await page.unroute('**/media/real/casa-real/frames/sala-*');
-  await page.getByRole('button', { name: 'Torna-ho a provar' }).click();
-  await page.waitForFunction(() => document.querySelector('.ftour')?.dataset.status === 'ready', null, { timeout: 10000 });
-  // si la panoràmica 360° recreada no carrega, s'ofereixen els fotogrames
-  await page.route('**/media/real/casa-real/pano/**', (r) => r.abort());
-  await page.goto(BASE + '/visita/casa-real?parada=terrassa');
-  await page.getByRole('button', { name: 'Mostra els fotogrames' }).click();
-  await page.waitForFunction(() => document.querySelector('.ftour')?.dataset.mode === 'frames' && document.querySelector('.ftour')?.dataset.status === 'ready', null, { timeout: 10000 });
   await page.context().close();
 });
 
@@ -550,23 +460,11 @@ await test('Mòbil: menú animat, filtres i visita amb control tàctil', async (
   assert(Math.abs(Number(b.yaw) - Number(a.yaw)) > 5, `El control tàctil no gira la vista (${a.yaw} → ${b.yaw})`);
   await page.waitForTimeout(500);
   await shot(page, 'mobile-tour');
-  // recorregut de la casa real amb el dit
-  await page.goto(BASE + '/habitatges/casa-real-terrassa');
+  // fitxa de l'habitació real a mòbil
+  await page.goto(BASE + '/habitatges/habitacio-real');
+  await page.waitForTimeout(800);
+  assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), 'Sense desplaçament horitzontal a la fitxa real');
   await shot(page, 'mobile-real-fitxa');
-  await page.goto(BASE + '/visita/casa-real?parada=entrada');
-  await page.waitForFunction(() => document.querySelector('.ftour')?.dataset.status === 'ready');
-  const v0 = await page.locator('.ftour').getAttribute('data-view');
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 300, y: 420 }] });
-    for (const x of [250, 200, 150, 100]) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: 420 }] });
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await page.waitForTimeout(500);
-    if ((await page.locator('.ftour').getAttribute('data-view')) !== v0) break;
-  }
-  assert((await page.locator('.ftour').getAttribute('data-view')) !== v0, 'Lliscar amb el dit gira la vista');
-  assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), 'Sense desplaçament horitzontal');
-  await page.waitForTimeout(600);
-  await shot(page, 'mobile-real-tour');
   noErrors(page);
   await page.context().close();
 });

@@ -1,58 +1,38 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
-import { realProperty, realTour } from '../data/realHouse';
+import { REAL_TOUR_ID, realPano, realProperty } from '../data/realHouse';
+import { tours } from '../data/tours';
 import { formatPrice } from './format';
 
-describe('habitatge real a partir del vídeo', () => {
+describe('habitatge real (habitació en 360°)', () => {
   it('no inventa dades comercials', () => {
     for (const k of ['price', 'municipality', 'surface', 'bedrooms', 'bathrooms', 'year', 'energy', 'operation'] as const) expect(realProperty[k]).toBeNull();
     expect(formatPrice(realProperty.price, realProperty.operation)).toBe('Preu a consultar');
     expect(realProperty.plan).toBeUndefined();
   });
-  it('el recorregut té els espais del vídeo i cada imatge existeix', () => {
-    expect(realTour.stops.map((s) => s.id)).toEqual(['entrada', 'passadis', 'sala', 'menjador', 'terrassa', 'cuina', 'dormitori']);
-    for (const s of realTour.stops) {
-      expect(s.views.length).toBeGreaterThan(0);
-      for (const v of s.views) {
-        expect(fs.existsSync(`public${v.src}.jpg`), v.src).toBe(true);
-        expect(fs.existsSync(`public${v.src}-sm.jpg`), v.src).toBe(true);
-        expect(v.height).toBeGreaterThan(v.width); // fotogrames verticals de mòbil
-        expect(v.height).toBeLessThanOrEqual(1024);
-      }
+  it('la visita té una sola estança amb una panoràmica 360° completa', () => {
+    const t = tours[REAL_TOUR_ID];
+    expect(t.propertySlug).toBe(realProperty.slug);
+    expect(Object.keys(t.scenes)).toEqual(['dormitori']);
+    expect(fs.existsSync(`public${realPano.full}`)).toBe(true);
+    expect(fs.existsSync(`public${realPano.preview}`)).toBe(true);
+    expect(realPano.coverage).toBeGreaterThan(0.9);
+    expect(realPano.coverage).toBeLessThan(1);
+    // la panoràmica és equirectangular 2:1
+    const buf = fs.readFileSync(`public${realPano.full}`);
+    let i = 2;
+    while (i < buf.length && !(buf[i] === 0xff && (buf[i + 1] === 0xc0 || buf[i + 1] === 0xc2))) i += 2 + buf.readUInt16BE(i + 2);
+    const h = buf.readUInt16BE(i + 5);
+    const w = buf.readUInt16BE(i + 7);
+    expect(w).toBe(2 * h);
+  });
+  it('les fotos de la galeria existeixen en les dues mides', () => {
+    for (const im of realProperty.images) {
+      expect(fs.existsSync(`public${im.src}.jpg`), im.src).toBe(true);
+      expect(fs.existsSync(`public${im.src}-sm.jpg`), im.src).toBe(true);
     }
   });
-  it('els punts de navegació porten a espais existents i estan dins de la imatge', () => {
-    const ids = new Set(realTour.stops.map((s) => s.id));
-    const all = realTour.stops.flatMap((s) => s.views.flatMap((v) => v.hotspots));
-    expect(all.filter((h) => h.to).length).toBeGreaterThanOrEqual(3);
-    for (const h of all) {
-      if (h.to) expect(ids.has(h.to)).toBe(true);
-      expect(h.x).toBeGreaterThan(0);
-      expect(h.x).toBeLessThan(100);
-      expect(h.y).toBeGreaterThan(0);
-      expect(h.y).toBeLessThan(100);
-    }
-  });
-  it('el vídeo editat és lleuger i té un capítol per espai', () => {
-    const v = realProperty.video!;
-    expect(fs.statSync(`public${v.src}`).size).toBeLessThan(5_000_000);
-    expect(v.chapters.map((c) => c.stop)).toEqual(realTour.stops.map((s) => s.id));
-    expect(v.chapters.every((c, i, a) => i === 0 || c.start > a[i - 1].start)).toBe(true);
-  });
-  it('les panoràmiques 360° recreades existeixen i declaren la zona realment gravada', () => {
-    const withPano = realTour.stops.filter((s) => s.pano);
-    expect(withPano.map((s) => s.id).sort()).toEqual(['cuina', 'sala', 'terrassa']);
-    for (const s of withPano) {
-      const p = s.pano!;
-      expect(fs.existsSync(`public${p.full}`), p.full).toBe(true);
-      expect(fs.existsSync(`public${p.preview}`), p.preview).toBe(true);
-      expect(p.horizontalDegrees).toBeGreaterThan(60);
-      expect(p.horizontalDegrees).toBeLessThan(360); // no és una esfera completa
-      expect(p.coverage).toBeGreaterThan(0);
-      expect(p.coverage).toBeLessThan(1);
-      // el rang de mirada coincideix amb els graus horitzontals gravats
-      expect(Math.abs(p.yaw[1] - p.yaw[0] - p.horizontalDegrees)).toBeLessThan(3);
-      expect(p.pitch[0]).toBeLessThan(p.pitch[1]);
-    }
+  it('no queda cap material del vídeo anterior', () => {
+    expect(fs.existsSync('public/media/real/casa-real')).toBe(false);
   });
 });

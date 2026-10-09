@@ -151,37 +151,39 @@ function Tour({ tourId }: { tourId: string }) {
         </span>
       </div>
 
-      {/* Plànol interactiu */}
-      <aside className={`tour__plan${planOpen ? ' is-open' : ''}`} aria-label="Plànol interactiu">
-        <button className="tour__plan-toggle" onClick={() => setPlanOpen((o) => !o)} aria-expanded={planOpen}>
-          <Icon name="map" size={18} /> Plànol
-          <Icon name={planOpen ? 'minus' : 'plus'} size={16} />
-        </button>
-        <div className="tour__plan-body">
-          <div className="tour__plan-inner">
-            <FloorPlan
-              plan={property.plan!}
-              active={sceneId}
-              points={points}
-              onSelect={navigate}
-              coneRef={cone}
-              showAreas={false}
-              labelAt="top"
-              title={`Plànol de ${property.title}. Estança actual: ${scene.name}`}
-              className="plan--tour"
-            />
-            <ul className="tour__rooms">
-              {sceneIds.map((id) => (
-                <li key={id}>
-                  <button className={id === sceneId ? 'is-active' : ''} aria-current={id === sceneId ? 'location' : undefined} onClick={() => navigate(id)}>
-                    {tour.scenes[id].name}
-                  </button>
-                </li>
-              ))}
-            </ul>
+      {/* Plànol interactiu (només si l'habitatge en té) */}
+      {property.plan && (
+        <aside className={`tour__plan${planOpen ? ' is-open' : ''}`} aria-label="Plànol interactiu">
+          <button className="tour__plan-toggle" onClick={() => setPlanOpen((o) => !o)} aria-expanded={planOpen}>
+            <Icon name="map" size={18} /> Plànol
+            <Icon name={planOpen ? 'minus' : 'plus'} size={16} />
+          </button>
+          <div className="tour__plan-body">
+            <div className="tour__plan-inner">
+              <FloorPlan
+                plan={property.plan}
+                active={sceneId}
+                points={points}
+                onSelect={navigate}
+                coneRef={cone}
+                showAreas={false}
+                labelAt="top"
+                title={`Plànol de ${property.title}. Estança actual: ${scene.name}`}
+                className="plan--tour"
+              />
+              <ul className="tour__rooms">
+                {sceneIds.map((id) => (
+                  <li key={id}>
+                    <button className={id === sceneId ? 'is-active' : ''} aria-current={id === sceneId ? 'location' : undefined} onClick={() => navigate(id)}>
+                      {tour.scenes[id].name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+      )}
 
       {/* Controls */}
       <div className="tour__controls" role="toolbar" aria-label="Controls de la vista">
@@ -202,7 +204,7 @@ function Tour({ tourId }: { tourId: string }) {
       {/* Avís de demostració */}
       <div className={`tour__notice${noticeOpen ? ' is-open' : ''}`}>
         <button className="tour__notice-btn" onClick={() => setNoticeOpen((o) => !o)} aria-expanded={noticeOpen}>
-          <Icon name="info" size={16} /> Experiència panoràmica de demostració
+          <Icon name="info" size={16} /> {tour.noticeLabel ?? 'Experiència panoràmica de demostració'}
         </button>
         {noticeOpen && <p role="note">{tour.notice}</p>}
       </div>

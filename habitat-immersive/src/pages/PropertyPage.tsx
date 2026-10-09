@@ -9,7 +9,7 @@ import { ContactForm } from '../components/ContactForm';
 import { PropertyCard } from '../components/PropertyCard';
 import { Reveal } from '../components/Reveal';
 import { Icon } from '../components/Icon';
-import { VideoChapters } from '../components/VideoChapters';
+import { realPano } from '../data/realHouse';
 import { NotFoundPage } from './NotFoundPage';
 
 export function PropertyPage() {
@@ -23,9 +23,8 @@ export function PropertyPage() {
   if (!p) return <NotFoundPage message="No hem trobat aquest habitatge." />;
   const similar = similarProperties(p);
   const real = p.kind === 'real';
-  const frames = p.tourKind === 'frames';
   const tourUrl = p.tourId ? `/visita/${p.tourId}` : null;
-  const tourCta = frames ? 'Explora la casa' : 'Entra al pis';
+  const tourCta = real ? "Entra a l'habitació" : 'Entra al pis';
 
   const facts = [
     { icon: 'area' as const, label: 'Superfície', value: orPending(p.surface, (s) => `${s} m²${p.outdoorSurface ? ` + ${formatNumber(p.outdoorSurface)} m² ext.` : ''}`) },
@@ -55,7 +54,7 @@ export function PropertyPage() {
               <span className="badge badge--outline">{p.type}</span>
               {p.tourId && (
                 <span className="badge badge--tour">
-                  <Icon name={frames ? 'door' : 'pano'} size={15} /> {frames ? 'Recorregut i 360° recreat' : 'Visita 360° disponible'}
+                  <Icon name="pano" size={15} /> Visita 360° disponible
                 </span>
               )}
               {real ? <span className="badge badge--real">Habitatge real · {p.reference}</span> : <span className="badge badge--demo">Anunci fictici · {p.reference}</span>}
@@ -80,40 +79,29 @@ export function PropertyPage() {
           </div>
         </header>
 
-        {real && p.spaces && tourUrl && (
-          <section className="explore" aria-labelledby="explore-title">
+        {real && tourUrl && (
+          <section className="explore explore--single" aria-labelledby="explore-title">
             <Link to={tourUrl} className="explore__main">
-              <img src={asset(`${p.images[0].src}.jpg`)} alt="" />
+              <img src={asset(realPano.preview)} alt="" />
               <span className="explore__main-text">
-                <span className="eyebrow eyebrow--light">
-                  Recorregut · {p.spaces.length} espais · {p.spaces.filter((s) => s.has360).length} en 360°
-                </span>
+                <span className="eyebrow eyebrow--light">Visita 360° · {realPano.photos} fotos reals</span>
                 <span id="explore-title" className="explore__title">
-                  Explora la casa pas a pas
+                  Entra a l'habitació
                 </span>
-                <span className="explore__sub">Vistes 360° recreades a partir del vídeo i fotogrames reals, amb punts per avançar d'un espai a l'altre.</span>
+                <span className="explore__sub">Arrossega per mirar al voltant: la panoràmica s'ha muntat amb fotos fetes des del centre del dormitori.</span>
                 <span className="btn btn--light">
-                  <Icon name="door" /> Comença el recorregut
+                  <Icon name="pano" /> Comença la visita 360°
                 </span>
               </span>
             </Link>
-            <ol className="explore__spaces" aria-label="Espais identificats al vídeo">
-              {p.spaces.map((s, i) => (
-                <li key={s.id}>
-                  <Link to={`${tourUrl}?parada=${s.id}`} className="explore__space">
-                    <img src={asset(`${s.image}-sm.jpg`)} alt="" loading="lazy" />
-                    <span>
-                      <em>{String(i + 1).padStart(2, '0')}</em> {s.name}
-                      {s.has360 && <b className="ftour__tag">360°</b>}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
           </section>
         )}
 
-        <Gallery images={p.images} title={p.title} credit={real ? 'Fotogrames seleccionats del vídeo original, amb un ajust lleuger de brillantor i contrast.' : undefined} />
+        <Gallery
+          images={p.images}
+          title={p.title}
+          credit={real ? 'Vistes extretes de la panoràmica 360° muntada amb fotos reals. S’han difuminat alguns objectes personals.' : undefined}
+        />
 
         <div className="property__layout">
           <div className="property__main">
@@ -127,12 +115,12 @@ export function PropertyPage() {
                   </li>
                 ))}
               </ul>
-              {real && <p className="muted facts__note">Les dades comercials s'afegiran quan el propietari les confirmi. No s'ha deduït cap mesura a partir del vídeo.</p>}
+              {real && <p className="muted facts__note">Les dades comercials s'afegiran quan el propietari les confirmi. No s'ha deduït cap mesura a partir de les fotos.</p>}
             </Reveal>
 
             <Reveal as="section" className="property__section" aria-labelledby="desc-title">
               <h2 id="desc-title" className="property__h2">
-                {real ? 'Què es veu al vídeo' : 'Descripció'}
+                {real ? 'Què es veu a les fotos' : 'Descripció'}
               </h2>
               <p className="lead">{p.summary}</p>
               {p.description.map((d, i) => (
@@ -158,25 +146,6 @@ export function PropertyPage() {
               </ul>
             </Reveal>
 
-            {p.video && (
-              <Reveal as="section" className="property__section" aria-labelledby="video-title">
-                <div className="property__plan-head">
-                  <h2 id="video-title" className="property__h2">
-                    Vídeo del recorregut
-                  </h2>
-                  {tourUrl && (
-                    <Link to={tourUrl} className="link-arrow">
-                      Prefereixo explorar-la <Icon name="arrowRight" size={18} />
-                    </Link>
-                  )}
-                </div>
-                <VideoChapters {...p.video} />
-                <p className="plan-card__note">
-                  Vídeo editat a partir de l'original: sense àudio, sense els trams borrosos i sense els fragments on apareixen fotografies personals o pantalles.
-                </p>
-              </Reveal>
-            )}
-
             {p.plan ? (
               <Reveal as="section" className="property__section" aria-labelledby="plan-title">
                 <div className="property__plan-head">
@@ -200,7 +169,9 @@ export function PropertyPage() {
                   <h2 id="plan-title" className="property__h2">
                     Plànol
                   </h2>
-                  <p>Encara no tenim el plànol d'aquest habitatge. El vídeo no permet mesurar les estances ni situar-les amb precisió, així que no n'hem dibuixat cap.</p>
+                  <p>
+                    Encara no tenim el plànol d'aquest habitatge. De moment només s'ha fotografiat una habitació i les fotos no permeten mesurar-la, així que no n'hem dibuixat cap.
+                  </p>
                 </Reveal>
               )
             )}
@@ -208,11 +179,11 @@ export function PropertyPage() {
             {tourUrl && (
               <Reveal as="section" className="property__section enter-banner">
                 <div>
-                  <p className="eyebrow eyebrow--light">{frames ? 'Recorregut visual' : 'Visita virtual 360°'}</p>
-                  <h2>{frames ? 'Recorre la casa com si hi fossis' : 'Entra-hi i mira al voltant'}</h2>
+                  <p className="eyebrow eyebrow--light">Visita virtual 360°</p>
+                  <h2>Entra-hi i mira al voltant</h2>
                   <p>
-                    {frames
-                      ? `${p.spaces?.length ?? 0} espais reals; ${p.spaces?.filter((s) => s.has360).length ?? 0} es poden mirar en 360° recreat a partir del vídeo. Punts de navegació, fotogrames originals i el vídeo per capítols.`
+                    {real
+                      ? "Un dormitori real en 360°, muntat amb deu fotos fetes des del centre de l'habitació."
                       : 'Sala, cuina i dos dormitoris connectats amb punts de navegació i un plànol interactiu.'}
                   </p>
                 </div>

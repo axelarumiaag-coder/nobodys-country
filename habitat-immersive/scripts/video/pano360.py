@@ -16,12 +16,14 @@ Mètode (OpenCV, tot local):
    colors veïns i es marquen a la màscara: no s'inventen detalls.
 
 Ús:  python3 pano360.py <vídeo> <inici> <final> <sortida.jpg> [--step 0.3] [--exclude a-b,c-d]
+     python3 pano360.py --images <carpeta amb fotos> <sortida.jpg>   (fotos fetes des del centre)
 """
 import argparse
 import json
 import math
 import os
 import subprocess
+import sys
 import tempfile
 
 import cv2
@@ -54,7 +56,7 @@ def select_frames(cands, step, min_sharp, exclude):
     return out
 
 
-def build(frames, work_megapix=0.45, compose_scale=1.0):
+def build(frames, work_megapix=0.45, compose_scale=1.0, ordered=True):
     imgs = [im for _, im in frames]
     h0, w0 = imgs[0].shape[:2]
     work_scale = min(1.0, math.sqrt(work_megapix * 1e6 / (h0 * w0)))
@@ -64,7 +66,8 @@ def build(frames, work_megapix=0.45, compose_scale=1.0):
         sm = cv2.resize(im, None, fx=work_scale, fy=work_scale, interpolation=cv2.INTER_AREA)
         small.append(sm)
         feats.append(cv2.detail.computeImageFeatures2(finder, sm))
-    matcher = cv2.detail_BestOf2NearestRangeMatcher(range_width=6, try_use_gpu=False, match_conf=0.3)
+    # Fotogrames d'un vídeo: només es comparen veïns. Fotos soltes: tots amb tots.
+    matcher = cv2.detail_BestOf2NearestRangeMatcher(range_width=6, try_use_gpu=False, match_conf=0.3) if ordered else cv2.detail_BestOf2NearestMatcher(False, 0.3)
     matches = matcher.apply2(feats)
     matcher.collectGarbage()
     keep = cv2.detail.leaveBiggestComponent(feats, matches, 0.6)
@@ -216,7 +219,9 @@ def fill_gaps(img, cover):
         top, bot = ys[0], ys[-1]
         base[:top, x] = base[top : top + band, x].mean(axis=0)
         base[bot + 1 :, x] = base[max(bot - band, top) : bot + 1, x].mean(axis=0)
-        ext[:, x] = True
+        # només per sobre i per sota de la zona gravada; els forats interiors es difonen després
+        ext[:top, x] = True
+        ext[bot + 1 :, x] = True
     # 2) Columnes no gravades: interpolació circular entre les vores esquerra i dreta
     if len(cols) and len(cols) < w:
         known_cols = np.zeros(w, bool)
@@ -227,7 +232,7 @@ def fill_gaps(img, cover):
             dr = next(d for d in range(1, w) if known_cols[(x + d) % w])
             t = dl / (dl + dr)
             base[:, x] = base[:, (x - dl) % w] * (1 - t) + base[:, (x + dr) % w] * t
-        ext[:] = True
+            ext[:, x] = True
     acc = base * ext[..., None]
     known_ext = ext
     wgt = known_ext.astype(np.float32)
@@ -282,7 +287,33 @@ def coverage_limits(cover):
     return {'yaw': [round(yaw0, 1), round(yaw1, 1)], 'pitch': [round(pitch_bot, 1), round(pitch_top, 1)]}
 
 
+def load_images(folder, max_side=2000):
+    """Fotos d'una carpeta (JPG/PNG), reduïdes perquè el procés sigui àgil."""
+    out = []
+    for name in sorted(os.listdir(folder)):
+        if not name.lower().endswith(('.jpg', '.jpeg', '.png')):
+            continue
+        im = cv2.imread(os.path.join(folder, name))
+        if im is None:
+            continue
+        k = min(1.0, max_side / max(im.shape[:2]))
+        if k < 1:
+            im = cv2.resize(im, None, fx=k, fy=k, interpolation=cv2.INTER_AREA)
+        out.append((name, im))
+    return out
+
+
 def main():
+    if '--images' in sys.argv:
+        ap = argparse.ArgumentParser()
+        ap.add_argument('--images', required=True)
+        ap.add_argument('out')
+        ap.add_argument('--width', type=int, default=4096)
+        a = ap.parse_args()
+        frames = load_images(a.images)
+        pano, pmask, dst, s, used = build(frames, work_megapix=0.6, ordered=False)
+        finish(pano, pmask, dst, s, used, a.out, a.width)
+        return
     ap = argparse.ArgumentParser()
     ap.add_argument('video')
     ap.add_argument('t0', type=float)
@@ -298,14 +329,18 @@ def main():
     cands = extract(a.video, a.t0, a.t1, 10, tmp)
     frames = select_frames(cands, a.step, a.min_sharp, exclude)
     pano, pmask, dst, s, used = build(frames)
-    eq, cover = to_equirect(pano, pmask, dst, s, a.width)
+    finish(pano, pmask, dst, s, used, a.out, a.width)
+
+
+def finish(pano, pmask, dst, s, used, out, width):
+    eq, cover = to_equirect(pano, pmask, dst, s, width)
     filled = fill_gaps(eq, cover)
-    cv2.imwrite(a.out, filled, [cv2.IMWRITE_JPEG_QUALITY, 86, cv2.IMWRITE_JPEG_PROGRESSIVE, 1])
-    cv2.imwrite(a.out.replace('.jpg', '-cover.png'), cover)
+    cv2.imwrite(out, filled, [cv2.IMWRITE_JPEG_QUALITY, 86, cv2.IMWRITE_JPEG_PROGRESSIVE, 1])
+    cv2.imwrite(out.replace('.jpg', '-cover.png'), cover)
     cov = float((cover > 0).mean())
     lon = float((cover.max(axis=0) > 0).mean() * 360)
-    info = {'frames': len(used), 'times': [round(t, 2) for t, _ in used], 'coverage': round(cov, 3), 'horizontalDegrees': round(lon), **coverage_limits(cover)}
-    json.dump(info, open(a.out.replace('.jpg', '.json'), 'w'))
+    info = {'frames': len(used), 'sources': [round(t, 2) if isinstance(t, float) else t for t, _ in used], 'coverage': round(cov, 3), 'horizontalDegrees': round(lon), **coverage_limits(cover)}
+    json.dump(info, open(out.replace('.jpg', '.json'), 'w'))
     print(json.dumps(info))
 
 

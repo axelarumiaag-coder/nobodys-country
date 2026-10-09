@@ -3,6 +3,7 @@
 // el mateix format que faríeu servir amb fotografies 360° reals.
 import layout from './demoTourLayout.json';
 import { asset } from '../lib/asset';
+import { REAL_TOUR_ID, realPano, realProperty } from './realHouse';
 
 export interface TourView {
   yaw: number; // graus, 0 = +X; creix cap a +Z (vegeu src/lib/sphere.ts)
@@ -30,6 +31,8 @@ export interface Tour {
   title: string;
   /** Avís que es mostra dins del visor */
   notice: string;
+  /** Text del botó de l'avís (per defecte, «Experiència panoràmica de demostració») */
+  noticeLabel?: string;
   start: string;
   scenes: Record<string, TourScene>;
 }
@@ -54,6 +57,25 @@ function buildScenes(tourId: string): Record<string, TourScene> {
 }
 
 export const tours: Record<string, Tour> = {
+  [REAL_TOUR_ID]: {
+    id: REAL_TOUR_ID,
+    propertySlug: realProperty.slug,
+    title: realProperty.title,
+    noticeLabel: 'Panoràmica feta amb fotos reals',
+    notice: `Panoràmica 360° muntada amb ${realPano.photos} fotos reals fetes amb un iPhone des del centre de l’habitació. Les poques zones que cap foto va captar (un ${Math.round((1 - realPano.coverage) * 100)} % de l’esfera) es mostren difuminades, i s’han difuminat també alguns objectes personals.`,
+    start: 'dormitori',
+    scenes: {
+      dormitori: {
+        id: 'dormitori',
+        name: 'Dormitori',
+        preview: asset(realPano.preview),
+        full: asset(realPano.full),
+        initialView: { yaw: 62, pitch: -6 },
+        links: [],
+        planPoint: [0, 0],
+      },
+    },
+  },
   'atic-sitges': {
     id: 'atic-sitges',
     propertySlug: 'atic-terrassa-sitges',

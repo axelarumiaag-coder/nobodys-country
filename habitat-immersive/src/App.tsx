@@ -11,16 +11,12 @@ import { LogoMark } from './components/Logo';
 
 // El visor (Three.js) es carrega només quan cal
 const TourPage = lazy(() => import('./pages/TourPage').then((m) => ({ default: m.TourPage })));
-// El recorregut amb fotogrames reals no necessita Three.js
-const FrameTourPage = lazy(() => import('./pages/FrameTourPage').then((m) => ({ default: m.FrameTourPage })));
-const FRAME_TOURS = new Set(['casa-real']);
 
 function TourRoute() {
   const { tourId = '' } = useParams();
-  const Page = FRAME_TOURS.has(tourId) ? FrameTourPage : TourPage;
   return (
     <Suspense fallback={<TourFallback />}>
-      <Page key={tourId} />
+      <TourPage key={tourId} />
     </Suspense>
   );
 }
