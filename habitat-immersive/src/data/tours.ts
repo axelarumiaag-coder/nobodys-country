@@ -2,6 +2,7 @@
 // Els punts de navegació s'expressen en graus (yaw/pitch) des del punt de captura,
 // el mateix format que faríeu servir amb fotografies 360° reals.
 import layout from './demoTourLayout.json';
+import { asset } from '../lib/asset';
 
 export interface TourView {
   yaw: number; // graus, 0 = +X; creix cap a +Z (vegeu src/lib/sphere.ts)
@@ -42,8 +43,8 @@ function buildScenes(tourId: string): Record<string, TourScene> {
     scenes[id] = {
       id,
       name: r.name,
-      preview: `/media/tours/${tourId}/${id}-preview.jpg`,
-      full: `/media/tours/${tourId}/${id}.jpg`,
+      preview: asset(`/media/tours/${tourId}/${id}-preview.jpg`),
+      full: asset(`/media/tours/${tourId}/${id}.jpg`),
       initialView: r.initialView,
       planPoint: r.viewpoint as [number, number],
       links: layout.links.filter((l) => l.from === id).map((l) => ({ to: l.to, label: l.label, yaw: l.yaw, pitch: l.pitch })),

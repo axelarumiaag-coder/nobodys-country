@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LogoMark } from './Logo';
+import { asset } from '../lib/asset';
 
 interface Props {
   /** Ruta base sense extensió (es generen `.jpg` i `-sm.jpg`) o URL completa */
@@ -18,8 +19,9 @@ interface Props {
  */
 export function SmartImage({ src, alt, className = '', sizes = '(max-width: 760px) 100vw, 50vw', priority = false, raw = false }: Props) {
   const [state, setState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const full = raw ? src : `${src}.jpg`;
-  const srcSet = raw ? undefined : `${src}-sm.jpg 800w, ${src}.jpg 1600w`;
+  const base = asset(src);
+  const full = raw ? base : `${base}.jpg`;
+  const srcSet = raw ? undefined : `${base}-sm.jpg 800w, ${base}.jpg 1600w`;
   return (
     <span className={`smart-img smart-img--${state} ${className}`}>
       {state !== 'error' ? (

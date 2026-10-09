@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { PropertyImage } from '../data/types';
 import { Icon } from './Icon';
 import { SmartImage } from './SmartImage';
+import { asset } from '../lib/asset';
 
 export function Gallery({ images, title }: { images: PropertyImage[]; title: string }) {
   const [index, setIndex] = useState(0);
@@ -57,7 +58,7 @@ export function Gallery({ images, title }: { images: PropertyImage[]; title: str
       <p className="gallery__credit">Visualitzacions 3D de demostració generades per ordinador.</p>
       {lightbox && (
         <div className="lightbox" role="dialog" aria-modal="true" aria-label="Imatge ampliada" onClick={() => setLightbox(false)}>
-          <img src={`${img.src}.jpg`} alt={img.alt} onClick={(e) => e.stopPropagation()} />
+          <img src={asset(`${img.src}.jpg`)} alt={img.alt} onClick={(e) => e.stopPropagation()} />
           <p className="lightbox__caption">{img.alt}</p>
           <button className="lightbox__close" onClick={() => setLightbox(false)} aria-label="Tanca">
             <Icon name="close" />
