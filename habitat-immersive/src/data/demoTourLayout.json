@@ -1,0 +1,213 @@
+{
+  "units": "m",
+  "bounds": {
+    "x": 0,
+    "z": 0,
+    "w": 10,
+    "h": 8.4
+  },
+  "terrace": {
+    "x": 0,
+    "z": -3.3,
+    "w": 10,
+    "h": 3.3
+  },
+  "rooms": {
+    "sala": {
+      "name": "Sala d'estar",
+      "rect": [
+        0,
+        0,
+        6.6,
+        4.6
+      ],
+      "viewpoint": [
+        3.55,
+        2.45
+      ],
+      "initialView": {
+        "yaw": -99.1,
+        "pitch": -4
+      }
+    },
+    "cuina": {
+      "name": "Cuina",
+      "rect": [
+        6.6,
+        0,
+        10,
+        4.6
+      ],
+      "viewpoint": [
+        8.05,
+        0.85
+      ],
+      "initialView": {
+        "yaw": 76.8,
+        "pitch": -4
+      }
+    },
+    "dormitori": {
+      "name": "Dormitori principal",
+      "rect": [
+        0,
+        4.6,
+        4.2,
+        8.4
+      ],
+      "viewpoint": [
+        3.2,
+        5.75
+      ],
+      "initialView": {
+        "yaw": 120.3,
+        "pitch": -4
+      }
+    },
+    "dormitori2": {
+      "name": "Segon dormitori",
+      "rect": [
+        5.6,
+        4.6,
+        10,
+        8.4
+      ],
+      "viewpoint": [
+        7.4,
+        5.55
+      ],
+      "initialView": {
+        "yaw": 115.9,
+        "pitch": -4
+      }
+    }
+  },
+  "extraRooms": [
+    {
+      "name": "Bany",
+      "rect": [
+        4.2,
+        4.6,
+        5.6,
+        8.4
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "x": 3,
+      "z": 4.6,
+      "w": 0.9,
+      "axis": "x"
+    },
+    {
+      "x": 4.5,
+      "z": 4.6,
+      "w": 0.8,
+      "axis": "x"
+    },
+    {
+      "x": 5.75,
+      "z": 4.6,
+      "w": 0.8,
+      "axis": "x"
+    }
+  ],
+  "openings": [
+    {
+      "x": 6.6,
+      "z": 0.55,
+      "w": 3.4,
+      "axis": "z"
+    }
+  ],
+  "windows": [
+    {
+      "x": 0.8,
+      "z": 0,
+      "w": 4.8,
+      "axis": "x"
+    },
+    {
+      "x": 7.2,
+      "z": 0,
+      "w": 2.2,
+      "axis": "x"
+    },
+    {
+      "x": 0,
+      "z": 1.2,
+      "w": 2.2,
+      "axis": "z"
+    },
+    {
+      "x": 0,
+      "z": 5.7,
+      "w": 1.8,
+      "axis": "z"
+    },
+    {
+      "x": 10,
+      "z": 1.35,
+      "w": 1.65,
+      "axis": "z"
+    },
+    {
+      "x": 10,
+      "z": 5.8,
+      "w": 1.8,
+      "axis": "z"
+    }
+  ],
+  "links": [
+    {
+      "from": "sala",
+      "to": "cuina",
+      "label": "Cuina",
+      "yaw": -16.6,
+      "pitch": -10
+    },
+    {
+      "from": "sala",
+      "to": "dormitori",
+      "label": "Dormitori principal",
+      "yaw": 92.7,
+      "pitch": -18
+    },
+    {
+      "from": "sala",
+      "to": "dormitori2",
+      "label": "Segon dormitori",
+      "yaw": 39.6,
+      "pitch": -11.7
+    },
+    {
+      "from": "cuina",
+      "to": "sala",
+      "label": "Sala d'estar",
+      "yaw": 163.1,
+      "pitch": -14.8
+    },
+    {
+      "from": "cuina",
+      "to": "dormitori2",
+      "label": "Segon dormitori",
+      "yaw": 116.9,
+      "pitch": -9.5
+    },
+    {
+      "from": "dormitori",
+      "to": "sala",
+      "label": "Sala d'estar",
+      "yaw": -77.7,
+      "pitch": -30.7
+    },
+    {
+      "from": "dormitori2",
+      "to": "sala",
+      "label": "Sala d'estar",
+      "yaw": -142.8,
+      "pitch": -24
+    }
+  ]
+}
