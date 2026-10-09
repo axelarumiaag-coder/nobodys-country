@@ -11,17 +11,19 @@ interface Props {
   priority?: boolean;
   /** Si és true, `src` ja inclou l'extensió i no hi ha variant petita */
   raw?: boolean;
+  /** Amplades reals de les variants [petita, gran] */
+  widths?: [number, number];
 }
 
 /**
  * Imatge amb càrrega progressiva i alternativa elegant si el fitxer no existeix o falla.
  * Una imatge trencada no deixa mai la targeta o la pàgina inutilitzable.
  */
-export function SmartImage({ src, alt, className = '', sizes = '(max-width: 760px) 100vw, 50vw', priority = false, raw = false }: Props) {
+export function SmartImage({ src, alt, className = '', sizes = '(max-width: 760px) 100vw, 50vw', priority = false, raw = false, widths = [800, 1600] }: Props) {
   const [state, setState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const base = asset(src);
   const full = raw ? base : `${base}.jpg`;
-  const srcSet = raw ? undefined : `${base}-sm.jpg 800w, ${base}.jpg 1600w`;
+  const srcSet = raw ? undefined : `${base}-sm.jpg ${widths[0]}w, ${base}.jpg ${widths[1]}w`;
   return (
     <span className={`smart-img smart-img--${state} ${className}`}>
       {state !== 'error' ? (

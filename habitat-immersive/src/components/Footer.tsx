@@ -43,8 +43,9 @@ export function Footer() {
         <div>
           <h3>Sobre aquesta demo</h3>
           <p className="site-footer__note">
-            HABITAT IMMERSIVE és una marca fictícia. Tots els habitatges, preus i imatges són de demostració: les imatges són visualitzacions 3D generades per ordinador i no
-            corresponen a cap immoble real. Els formularis no envien dades a cap servidor.
+            HABITAT IMMERSIVE és una marca fictícia. Els sis habitatges de demostració són ficticis i les seves imatges són visualitzacions 3D generades per ordinador i no
+            corresponen a cap immoble real. L'«Habitatge amb terrassa» és real: les imatges són fotogrames del seu vídeo i no se n'ha inventat cap dada comercial. Els formularis no
+            envien dades a cap servidor.
           </p>
         </div>
       </div>

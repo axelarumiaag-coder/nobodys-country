@@ -1,0 +1,276 @@
+{
+  "id": "casa-real",
+  "source": {
+    "width": 576,
+    "height": 1024,
+    "fps": 31.58,
+    "duration": 98.23
+  },
+  "stops": [
+    {
+      "id": "entrada",
+      "name": "Entrada",
+      "views": [
+        {
+          "id": "acces-sala",
+          "label": "Accés a la sala des de l'entrada",
+          "src": "/media/real/casa-real/frames/entrada-acces-sala",
+          "time": 3.92,
+          "sharpness": 73.3,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "porta",
+          "label": "Porta d'entrada de fusta",
+          "src": "/media/real/casa-real/frames/entrada-porta",
+          "time": 7.55,
+          "sharpness": 45.8,
+          "width": 576,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "passadis",
+      "name": "Passadís",
+      "views": [
+        {
+          "id": "passadis",
+          "label": "Passadís amb el bany al fons",
+          "src": "/media/real/casa-real/frames/passadis-passadis",
+          "time": 12.71,
+          "sharpness": 46.3,
+          "width": 576,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "sala",
+      "name": "Sala d'estar",
+      "views": [
+        {
+          "id": "sofa-finestral",
+          "label": "Sofà i finestral",
+          "src": "/media/real/casa-real/frames/sala-sofa-finestral",
+          "time": 14.68,
+          "sharpness": 26.9,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "finestral",
+          "label": "Finestral cap a la terrassa",
+          "src": "/media/real/casa-real/frames/sala-finestral",
+          "time": 24.28,
+          "sharpness": 57.0,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "sofa",
+          "label": "Sofà al costat del finestral",
+          "src": "/media/real/casa-real/frames/sala-sofa",
+          "time": 25.07,
+          "sharpness": 61.7,
+          "width": 576,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "menjador",
+      "name": "Zona de menjador",
+      "views": [
+        {
+          "id": "escriptori",
+          "label": "Moble escriptori de fusta",
+          "src": "/media/real/casa-real/frames/menjador-escriptori",
+          "time": 16.97,
+          "sharpness": 23.3,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "bufet",
+          "label": "Bufet i quadre",
+          "src": "/media/real/casa-real/frames/menjador-bufet",
+          "time": 18.32,
+          "sharpness": 36.0,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "taula",
+          "label": "Taula de menjador",
+          "src": "/media/real/casa-real/frames/menjador-taula",
+          "time": 78.06,
+          "sharpness": 72.9,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "acces-cuina",
+          "label": "Pas cap a la cuina",
+          "src": "/media/real/casa-real/frames/menjador-acces-cuina",
+          "time": 53.08,
+          "sharpness": 76.9,
+          "width": 576,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "terrassa",
+      "name": "Terrassa",
+      "views": [
+        {
+          "id": "porxo",
+          "label": "Zona coberta de la terrassa",
+          "src": "/media/real/casa-real/frames/terrassa-porxo",
+          "time": 34.41,
+          "sharpness": 179.6,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "jardineres",
+          "label": "Jardineres i cadires",
+          "src": "/media/real/casa-real/frames/terrassa-jardineres",
+          "time": 37.34,
+          "sharpness": 184.7,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "cadires",
+          "label": "Cadires i barana",
+          "src": "/media/real/casa-real/frames/terrassa-cadires",
+          "time": 38.33,
+          "sharpness": 184.1,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "vistes",
+          "label": "Vistes als habitatges veïns",
+          "src": "/media/real/casa-real/frames/terrassa-vistes",
+          "time": 39.77,
+          "sharpness": 146.0,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "raco",
+          "label": "Racó amb fanal i testos",
+          "src": "/media/real/casa-real/frames/terrassa-raco",
+          "time": 41.31,
+          "sharpness": 256.1,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "caseta",
+          "label": "Caseta de fusta",
+          "src": "/media/real/casa-real/frames/terrassa-caseta",
+          "time": 42.28,
+          "sharpness": 265.8,
+          "width": 576,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "cuina",
+      "name": "Cuina",
+      "views": [
+        {
+          "id": "taulell",
+          "label": "Taulell i armaris",
+          "src": "/media/real/casa-real/frames/cuina-taulell",
+          "time": 55.34,
+          "sharpness": 27.0,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "forn",
+          "label": "Columna de forn i microones",
+          "src": "/media/real/casa-real/frames/cuina-forn",
+          "time": 59.2,
+          "sharpness": 33.8,
+          "width": 576,
+          "height": 1024
+        },
+        {
+          "id": "armaris",
+          "label": "Armaris alts i baixos",
+          "src": "/media/real/casa-real/frames/cuina-armaris",
+          "time": 61.5,
+          "sharpness": 25.7,
+          "width": 576,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "dormitori",
+      "name": "Dormitori",
+      "views": [
+        {
+          "id": "prestatges",
+          "label": "Prestatges amb llibres",
+          "src": "/media/real/casa-real/frames/dormitori-prestatges",
+          "time": 87.56,
+          "sharpness": 93.3,
+          "width": 576,
+          "height": 1024
+        }
+      ]
+    }
+  ],
+  "clip": {
+    "src": "/media/real/casa-real/recorregut.mp4",
+    "webm": "/media/real/casa-real/recorregut.webm",
+    "poster": "/media/real/casa-real/recorregut-poster.jpg",
+    "duration": 30.4,
+    "chapters": [
+      {
+        "stop": "entrada",
+        "label": "Entrada",
+        "start": 0.0
+      },
+      {
+        "stop": "passadis",
+        "label": "Passadís",
+        "start": 3.0
+      },
+      {
+        "stop": "sala",
+        "label": "Sala d'estar",
+        "start": 5.6
+      },
+      {
+        "stop": "menjador",
+        "label": "Zona de menjador",
+        "start": 8.1
+      },
+      {
+        "stop": "terrassa",
+        "label": "Terrassa",
+        "start": 12.3
+      },
+      {
+        "stop": "cuina",
+        "label": "Cuina",
+        "start": 21.0
+      },
+      {
+        "stop": "dormitori",
+        "label": "Dormitori",
+        "start": 27.7
+      }
+    ]
+  }
+}

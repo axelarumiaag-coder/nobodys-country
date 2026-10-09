@@ -1,7 +1,9 @@
-// Catàleg de demostració. TOTS els anuncis són FICTICIS: preus, adreces i característiques
-// s'han inventat per a aquesta demo i no corresponen a cap habitatge real.
+// Catàleg. Els anuncis de `demoProperties` són FICTICIS: preus, adreces i característiques
+// s'han inventat per a aquesta demo. `realProperty` és un habitatge real afegit a partir d'un
+// vídeo (vegeu realHouse.ts): no té dades comercials inventades.
 import type { FloorPlanData, Property } from './types';
 import layout from './demoTourLayout.json';
+import { realProperty } from './realHouse';
 
 const img = (slug: string, n: number, alt: string) => ({ src: `/media/properties/${slug}/${n}`, alt });
 
@@ -22,7 +24,7 @@ export const demoTourPlan: FloorPlanData = {
   openings: layout.openings as FloorPlanData['openings'],
 };
 
-export const properties: Property[] = [
+const demoProperties: Property[] = [
   {
     slug: 'atic-terrassa-sitges',
     reference: 'HI-DEMO-001',
@@ -313,17 +315,24 @@ export const properties: Property[] = [
   },
 ];
 
+export const properties: Property[] = [realProperty, ...demoProperties];
+
 export const getProperty = (slug: string) => properties.find((p) => p.slug === slug);
 export const getPropertyByTour = (tourId: string) => properties.find((p) => p.tourId === tourId);
-export const municipalities = Array.from(new Set(properties.map((p) => p.municipality))).sort((a, b) => a.localeCompare(b, 'ca'));
+export const municipalities = Array.from(new Set(properties.map((p) => p.municipality).filter((m): m is string => !!m))).sort((a, b) => a.localeCompare(b, 'ca'));
 
-/** Habitatges similars: mateixa operació primer, després per proximitat de preu relatiu i tipus */
+/** Habitatges similars: mateixa operació primer, després per proximitat de preu relatiu i tipus.
+ *  Si falta el preu, es prioritzen els habitatges amb visita. */
 export function similarProperties(p: Property, n = 3): Property[] {
   return properties
     .filter((o) => o.slug !== p.slug)
     .map((o) => ({
       o,
-      score: (o.operation === p.operation ? 0 : 10) + Math.abs(Math.log(o.price / p.price)) + (o.type === p.type ? 0 : 0.5) + (o.tourId ? -0.2 : 0),
+      score:
+        (o.operation === p.operation || p.operation == null ? 0 : 10) +
+        (o.price != null && p.price != null ? Math.abs(Math.log(o.price / p.price)) : 1) +
+        (o.type === p.type ? 0 : 0.5) +
+        (o.tourId ? -0.2 : 0),
     }))
     .sort((a, b) => a.score - b.score)
     .slice(0, n)

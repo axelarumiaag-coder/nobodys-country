@@ -28,16 +28,19 @@ export function applyFilters(list: Property[], f: Filters): Property[] {
   const out = list.filter((p) => {
     if (f.operation !== 'totes' && p.operation !== f.operation) return false;
     if (f.municipality && p.municipality !== f.municipality) return false;
-    if (f.minPrice != null && p.price < f.minPrice) return false;
-    if (f.maxPrice != null && p.price > f.maxPrice) return false;
-    if (f.minBedrooms && p.bedrooms < f.minBedrooms) return false;
-    if (f.minSurface && p.surface < f.minSurface) return false;
+    // Un habitatge sense la dada no pot complir un filtre sobre aquesta dada
+    if (f.minPrice != null && (p.price == null || p.price < f.minPrice)) return false;
+    if (f.maxPrice != null && (p.price == null || p.price > f.maxPrice)) return false;
+    if (f.minBedrooms && (p.bedrooms == null || p.bedrooms < f.minBedrooms)) return false;
+    if (f.minSurface && (p.surface == null || p.surface < f.minSurface)) return false;
     if (f.tourOnly && !p.tourId) return false;
     return true;
   });
-  if (f.sort === 'preu-asc') out.sort((a, b) => a.price - b.price);
-  else if (f.sort === 'preu-desc') out.sort((a, b) => b.price - a.price);
-  else out.sort((a, b) => Number(!!b.featured) + Number(!!b.tourId) - (Number(!!a.featured) + Number(!!a.tourId)));
+  // Els habitatges amb «Preu a consultar» queden sempre al final quan s'ordena per preu
+  const price = (p: Property, missing: number) => p.price ?? missing;
+  if (f.sort === 'preu-asc') out.sort((a, b) => price(a, Infinity) - price(b, Infinity));
+  else if (f.sort === 'preu-desc') out.sort((a, b) => price(b, -Infinity) - price(a, -Infinity));
+  else out.sort((a, b) => score(b) - score(a));
   return out;
 }
 
@@ -75,6 +78,8 @@ export function filtersToParams(f: Filters): URLSearchParams {
   if (f.sort !== 'relevancia') p.set('ordre', f.sort);
   return p;
 }
+
+const score = (p: Property) => (p.kind === 'real' ? 4 : 0) + Number(!!p.featured) + Number(!!p.tourId);
 
 export function activeFilterCount(f: Filters): number {
   let n = 0;

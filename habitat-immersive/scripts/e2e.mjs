@@ -150,14 +150,14 @@ await test('Els botons de navegació porten a les seccions', async () => {
   await page.context().close();
 });
 
-await test('El catàleg mostra 6 habitatges i els filtres funcionen', async () => {
+await test('El catàleg mostra 7 habitatges i els filtres funcionen', async () => {
   const page = await newPage();
   await page.goto(BASE + '/habitatges');
-  assert((await count(page, '.card')) === 6, 'Haurien de ser 6 targetes');
-  await page.getByText('Només amb visita virtual 360°').click();
-  await page.waitForFunction(() => document.querySelectorAll('.card').length === 2);
-  assert((await count(page, '.card .badge--tour')) === 2, 'Totes han de tenir visita');
-  await page.getByText('Només amb visita virtual 360°').click();
+  assert((await count(page, '.card')) === 7, 'Haurien de ser 7 targetes (6 de demo + 1 real)');
+  await page.getByText('Només amb visita virtual').click();
+  await page.waitForFunction(() => document.querySelectorAll('.card').length === 3);
+  assert((await count(page, '.card .badge--tour')) === 3, 'Totes han de tenir visita');
+  await page.getByText('Només amb visita virtual').click();
   await page.locator('.filters select[name=municipality]').selectOption('Girona');
   await page.waitForFunction(() => document.querySelectorAll('.card').length === 1);
   await page.locator('.filters select[name=municipality]').selectOption('');
@@ -184,7 +184,7 @@ await test('El catàleg mostra 6 habitatges i els filtres funcionen', async () =
     .getByRole('button', { name: /Esborra els filtres/ })
     .first()
     .click();
-  await page.waitForFunction(() => document.querySelectorAll('.card').length === 6);
+  await page.waitForFunction(() => document.querySelectorAll('.card').length === 7);
   await page.locator('select[name=sort]').selectOption('preu-desc');
   await page.waitForURL(/ordre=preu-desc/);
   await page.waitForTimeout(300);
@@ -195,7 +195,7 @@ await test('El catàleg mostra 6 habitatges i els filtres funcionen', async () =
   await page.waitForSelector('.empty');
   await shot(page, 'desktop-catalog-empty');
   await page.locator('.empty .btn').click();
-  await page.waitForFunction(() => document.querySelectorAll('.card').length === 6);
+  await page.waitForFunction(() => document.querySelectorAll('.card').length === 7);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(800);
   await shot(page, 'desktop-catalog');
@@ -206,7 +206,7 @@ await test('El catàleg mostra 6 habitatges i els filtres funcionen', async () =
 await test('Fitxa: galeria, plànol, formulari i similars', async () => {
   const page = await newPage();
   await page.goto(BASE + '/habitatges');
-  await page.locator('.card').first().click();
+  await page.locator('.card', { hasText: 'Àtic amb terrassa' }).click();
   await page.waitForURL(/\/habitatges\/atic-terrassa-sitges/);
   assert((await waitText(page, 'h1', 'Àtic')).includes('Àtic'), 'Títol de la fitxa');
   assert((await page.locator('.property__price').innerText()).includes('595.000'), 'Preu');
@@ -362,6 +362,115 @@ await test('Recursos absents: imatges i panoràmiques tenen alternativa', async 
   await page.context().close();
 });
 
+await test('Casa real: portada, llistat, fitxa, imatges i vídeo', async () => {
+  const page = await newPage();
+  await page.goto(BASE + '/');
+  await page.locator('.real-band').scrollIntoViewIfNeeded();
+  assert((await page.locator('#real-title').innerText()) === 'Habitatge amb terrassa', 'Franja de la casa real a la portada');
+  assert((await page.locator('.section .grid--cards .card', { hasText: 'Habitatge amb terrassa' }).count()) === 1, 'Destacada a la portada');
+  await page.goto(BASE + '/habitatges');
+  const card = page.locator('.card', { hasText: 'Habitatge amb terrassa' });
+  assert((await card.locator('.badge--real').count()) === 1, 'Distintiu «Habitatge real» al llistat');
+  assert((await card.locator('.card__price').innerText()) === 'Preu a consultar', 'Preu a consultar al llistat');
+  await card.click();
+  await page.waitForURL(/\/habitatges\/casa-real-terrassa$/);
+  assert((await waitText(page, 'h1', 'Habitatge amb terrassa')).includes('Habitatge amb terrassa'), 'Títol de la fitxa');
+  assert((await page.locator('.property__price').innerText()) === 'Preu a consultar', 'Preu pendent');
+  assert((await page.locator('.facts li.is-pending').count()) >= 5, 'Dades comercials pendents');
+  assert((await count(page, '.explore__space')) === 7, 'Set espais identificats');
+  await page.waitForFunction(() => [...document.querySelectorAll('.explore img, .gallery__main img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15000 });
+  await page.getByRole('button', { name: 'Imatge següent' }).first().click();
+  await page.waitForFunction(() => document.querySelector('.gallery__main img')?.naturalWidth > 0);
+  // vídeo amb capítols
+  const v = page.locator('.vchap video').first();
+  await v.scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.querySelector('.vchap video')?.readyState >= 1, null, { timeout: 15000 });
+  assert(await v.evaluate((el) => el.muted && el.duration > 25 && el.duration < 40), 'Vídeo editat sense àudio (~30 s)');
+  await page.locator('.vchap__chapters button', { hasText: 'Terrassa' }).click();
+  await page.waitForFunction(() => document.querySelector('.vchap__chapters .is-active')?.textContent.includes('Terrassa'), null, { timeout: 8000 });
+  await page.evaluate(() => document.querySelector('.vchap video').pause());
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(700);
+  await shot(page, 'desktop-real-fitxa');
+  noErrors(page);
+  await page.context().close();
+});
+
+await test('Casa real: recorregut visual (girar, punts, recorregut, zoom, vídeo, tornar)', async () => {
+  const page = await newPage();
+  const state = () => page.locator('.ftour').evaluate((el) => ({ ...el.dataset }));
+  const waitView = (stop, view) =>
+    page.waitForFunction(
+      ([s, v]) => {
+        const d = document.querySelector('.ftour')?.dataset;
+        return d?.stop === s && (!v || d.view === v) && d.status === 'ready';
+      },
+      [stop, view],
+      { timeout: 15000 }
+    );
+  await page.goto(BASE + '/habitatges/casa-real-terrassa');
+  await page.getByRole('link', { name: 'Comença el recorregut' }).click();
+  await page.waitForURL(/\/visita\/casa-real/);
+  await waitView('entrada', 'acces-sala');
+  assert((await page.getByTestId('current-room').innerText()) === 'Entrada', 'Indicador d’espai');
+  assert((await page.locator('.ftour__zoom img').evaluate((i) => i.naturalWidth)) > 0, 'Imatge carregada');
+  // girar
+  await page.getByRole('button', { name: 'Gira: vista següent' }).click();
+  await waitView('entrada', 'porta');
+  await page.keyboard.press('ArrowLeft');
+  await waitView('entrada', 'acces-sala');
+  await shot(page, 'desktop-real-tour');
+  // punt de navegació cap a la sala
+  await page.locator('.ftour__hotspot[data-to=sala]').click();
+  await waitView('sala');
+  assert((await page.getByTestId('current-room').innerText()) === "Sala d'estar", 'Ara a la sala');
+  assert(new URL(page.url()).searchParams.get('parada') === 'sala', 'URL per espai');
+  // girar fins al finestral i sortir a la terrassa
+  for (let i = 0; i < 4 && (await state()).view !== 'finestral'; i++) {
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(250);
+  }
+  await waitView('sala', 'finestral');
+  await page.locator('.ftour__hotspot[data-to=terrassa]').click();
+  await waitView('terrassa');
+  await shot(page, 'desktop-real-terrassa');
+  // tira del recorregut
+  await page.locator('.ftour__strip button', { hasText: 'Cuina' }).click();
+  await waitView('cuina');
+  assert((await page.locator('.ftour__strip button.is-active').innerText()).includes('Cuina'), 'Recorregut ressalta l’espai');
+  await page.getByRole('button', { name: 'Espai següent' }).click();
+  await waitView('dormitori');
+  // zoom
+  await page.getByRole('button', { name: 'Apropa' }).click();
+  await page.waitForTimeout(350);
+  assert((await page.locator('.ftour__zoom').getAttribute('style')).includes('scale(1.4)'), 'El zoom apropa');
+  await page.getByRole('button', { name: 'Allunya' }).click();
+  // vídeo dins del recorregut
+  await page.getByRole('button', { name: "Mira el vídeo d'aquest espai" }).click();
+  await page.waitForSelector('.ftour__video video');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.ftour__video', { state: 'detached' });
+  // avís honest
+  await page.getByRole('button', { name: /no és 360°/ }).click();
+  assert((await page.locator('.tour__notice p').innerText()).includes('No és una visita 360°'), 'Avís honest');
+  await page.getByRole('link', { name: "Torna a la fitxa de l'immoble" }).click();
+  await page.waitForURL(/\/habitatges\/casa-real-terrassa$/);
+  noErrors(page);
+  await page.context().close();
+});
+
+await test('Casa real: una vista que no carrega mostra alternativa i reintent', async () => {
+  const page = await newPage();
+  await page.route('**/media/real/casa-real/frames/sala-*', (r) => r.abort());
+  await page.goto(BASE + '/visita/casa-real?parada=sala');
+  await page.waitForSelector('.ftour__failed');
+  assert((await page.locator('.ftour__strip button').count()) === 7, 'La resta del recorregut continua funcionant');
+  await page.unroute('**/media/real/casa-real/frames/sala-*');
+  await page.getByRole('button', { name: 'Torna-ho a provar' }).click();
+  await page.waitForFunction(() => document.querySelector('.ftour')?.dataset.status === 'ready', null, { timeout: 10000 });
+  await page.context().close();
+});
+
 await test('Mòbil: menú animat, filtres i visita amb control tàctil', async () => {
   const page = await newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   await page.goto(BASE + '/');
@@ -377,8 +486,8 @@ await test('Mòbil: menú animat, filtres i visita amb control tàctil', async (
   await page.waitForURL(/\/habitatges$/);
   await page.locator('.catalog__filter-btn').tap();
   await page.waitForTimeout(700);
-  await page.getByText('Només amb visita virtual 360°').tap();
-  assert((await waitCount(page, 2)) === 2, 'Filtre a mòbil');
+  await page.getByText('Només amb visita virtual').tap();
+  assert((await waitCount(page, 3)) === 3, 'Filtre a mòbil');
   await shot(page, 'mobile-filters');
   await page.locator('.catalog__apply').tap();
   await page.waitForTimeout(600);
@@ -408,6 +517,23 @@ await test('Mòbil: menú animat, filtres i visita amb control tàctil', async (
   assert(Math.abs(Number(b.yaw) - Number(a.yaw)) > 5, `El control tàctil no gira la vista (${a.yaw} → ${b.yaw})`);
   await page.waitForTimeout(500);
   await shot(page, 'mobile-tour');
+  // recorregut de la casa real amb el dit
+  await page.goto(BASE + '/habitatges/casa-real-terrassa');
+  await shot(page, 'mobile-real-fitxa');
+  await page.goto(BASE + '/visita/casa-real?parada=terrassa');
+  await page.waitForFunction(() => document.querySelector('.ftour')?.dataset.status === 'ready');
+  const v0 = await page.locator('.ftour').getAttribute('data-view');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 300, y: 420 }] });
+    for (const x of [250, 200, 150, 100]) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: 420 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(500);
+    if ((await page.locator('.ftour').getAttribute('data-view')) !== v0) break;
+  }
+  assert((await page.locator('.ftour').getAttribute('data-view')) !== v0, 'Lliscar amb el dit gira la vista');
+  assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), 'Sense desplaçament horitzontal');
+  await page.waitForTimeout(600);
+  await shot(page, 'mobile-real-tour');
   noErrors(page);
   await page.context().close();
 });

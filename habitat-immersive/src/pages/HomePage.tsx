@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { properties } from '../data/properties';
+import { realProperty } from '../data/realHouse';
+import { asset } from '../lib/asset';
 import { PropertyCard } from '../components/PropertyCard';
 import { SearchBar } from '../components/SearchBar';
 import { Reveal } from '../components/Reveal';
@@ -39,6 +41,32 @@ export function HomePage() {
         <div className="container hero__search">
           <SearchBar />
         </div>
+      </section>
+
+      <section className="section section--real" aria-labelledby="real-title">
+        <Reveal className="container real-band">
+          <Link to={`/habitatges/${realProperty.slug}`} className="real-band__media" aria-label={`Veure la fitxa de ${realProperty.title}`}>
+            <img src={asset(`${realProperty.images[0].src}.jpg`)} alt={realProperty.images[0].alt} loading="lazy" />
+            <img src={asset(`${realProperty.images[1].src}-sm.jpg`)} alt={realProperty.images[1].alt} loading="lazy" />
+            <img src={asset(`${realProperty.images[2].src}-sm.jpg`)} alt={realProperty.images[2].alt} loading="lazy" />
+          </Link>
+          <div className="real-band__text">
+            <p className="eyebrow">Nou al catàleg · habitatge real</p>
+            <h2 id="real-title" className="section__title">
+              {realProperty.title}
+            </h2>
+            <p className="lead">{realProperty.summary}</p>
+            <p className="muted">Preu i ubicació a consultar. Tot el material prové d'un vídeo real gravat amb mòbil.</p>
+            <div className="tour-feature__actions">
+              <Link to={`/visita/${realProperty.tourId}`} className="btn btn--primary">
+                <Icon name="door" /> Explora la casa
+              </Link>
+              <Link to={`/habitatges/${realProperty.slug}`} className="link-arrow">
+                Veure la fitxa <Icon name="arrowRight" size={18} />
+              </Link>
+            </div>
+          </div>
+        </Reveal>
       </section>
 
       <section className="section" aria-labelledby="featured-title">
@@ -149,8 +177,8 @@ export function HomePage() {
           </div>
           <Reveal className="stats" delay={100}>
             <div>
-              <strong>6</strong>
-              <span>habitatges de demostració</span>
+              <strong>1 + 6</strong>
+              <span>casa real i habitatges de demostració</span>
             </div>
             <div>
               <strong>360°</strong>

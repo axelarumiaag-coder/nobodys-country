@@ -108,7 +108,7 @@ export function FilterPanel({ filters: f, onChange }: Props) {
       <label className="switch">
         <input type="checkbox" checked={f.tourOnly} onChange={(e) => set('tourOnly', e.target.checked)} name="tourOnly" />
         <span className="switch__track" aria-hidden="true" />
-        <span>Només amb visita virtual 360°</span>
+        <span>Només amb visita virtual</span>
       </label>
 
       <button type="button" className="btn btn--ghost btn--block" disabled={count === 0} onClick={() => onChange({ ...defaultFilters, sort: f.sort })}>

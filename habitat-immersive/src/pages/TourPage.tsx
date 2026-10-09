@@ -160,7 +160,7 @@ function Tour({ tourId }: { tourId: string }) {
         <div className="tour__plan-body">
           <div className="tour__plan-inner">
             <FloorPlan
-              plan={property.plan}
+              plan={property.plan!}
               active={sceneId}
               points={points}
               onSelect={navigate}

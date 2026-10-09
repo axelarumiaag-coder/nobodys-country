@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomePage } from './pages/HomePage';
@@ -11,6 +11,19 @@ import { LogoMark } from './components/Logo';
 
 // El visor (Three.js) es carrega només quan cal
 const TourPage = lazy(() => import('./pages/TourPage').then((m) => ({ default: m.TourPage })));
+// El recorregut amb fotogrames reals no necessita Three.js
+const FrameTourPage = lazy(() => import('./pages/FrameTourPage').then((m) => ({ default: m.FrameTourPage })));
+const FRAME_TOURS = new Set(['casa-real']);
+
+function TourRoute() {
+  const { tourId = '' } = useParams();
+  const Page = FRAME_TOURS.has(tourId) ? FrameTourPage : TourPage;
+  return (
+    <Suspense fallback={<TourFallback />}>
+      <Page key={tourId} />
+    </Suspense>
+  );
+}
 
 function ScrollManager() {
   const { pathname, hash } = useLocation();
@@ -67,14 +80,7 @@ export function App() {
           <Route path="/contacte" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
-        <Route
-          path="/visita/:tourId"
-          element={
-            <Suspense fallback={<TourFallback />}>
-              <TourPage />
-            </Suspense>
-          }
-        />
+        <Route path="/visita/:tourId" element={<TourRoute />} />
       </Routes>
     </>
   );

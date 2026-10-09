@@ -3,3 +3,7 @@ dist
 *.log
 .DS_Store
 dist-static
+
+# Vídeos originals: no es pugen al repositori (privacitat i mida)
+media-source/
+*.tsbuildinfo

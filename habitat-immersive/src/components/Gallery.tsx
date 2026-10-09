@@ -4,7 +4,7 @@ import { Icon } from './Icon';
 import { SmartImage } from './SmartImage';
 import { asset } from '../lib/asset';
 
-export function Gallery({ images, title }: { images: PropertyImage[]; title: string }) {
+export function Gallery({ images, title, credit = 'Visualitzacions 3D de demostració generades per ordinador.' }: { images: PropertyImage[]; title: string; credit?: string }) {
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const go = useCallback((d: number) => setIndex((i) => (i + d + images.length) % images.length), [images.length]);
@@ -28,8 +28,9 @@ export function Gallery({ images, title }: { images: PropertyImage[]; title: str
   return (
     <section className="gallery" aria-label={`Galeria d'imatges de ${title}`}>
       <div className="gallery__main">
-        <button className="gallery__open" onClick={() => setLightbox(true)} aria-label="Amplia la imatge">
-          <SmartImage key={img.src} src={img.src} alt={img.alt} sizes="(max-width: 900px) 100vw, 66vw" priority={index === 0} />
+        {img.portrait && <span key={`bg-${img.src}`} className="gallery__backdrop" style={{ backgroundImage: `url("${asset(`${img.src}-sm.jpg`)}")` }} aria-hidden="true" />}
+        <button className={`gallery__open${img.portrait ? ' gallery__open--portrait' : ''}`} onClick={() => setLightbox(true)} aria-label="Amplia la imatge">
+          <SmartImage key={img.src} src={img.src} alt={img.alt} sizes="(max-width: 900px) 100vw, 66vw" priority={index === 0} widths={img.widths} />
         </button>
         <button className="gallery__nav gallery__nav--prev" onClick={() => go(-1)} aria-label="Imatge anterior">
           <Icon name="arrowLeft" />
@@ -51,11 +52,11 @@ export function Gallery({ images, title }: { images: PropertyImage[]; title: str
             onClick={() => setIndex(i)}
             aria-label={`Mostra la imatge ${i + 1}: ${im.alt}`}
           >
-            <SmartImage src={im.src} alt="" sizes="160px" />
+            <SmartImage src={im.src} alt="" sizes="160px" widths={im.widths} />
           </button>
         ))}
       </div>
-      <p className="gallery__credit">Visualitzacions 3D de demostració generades per ordinador.</p>
+      <p className="gallery__credit">{credit}</p>
       {lightbox && (
         <div className="lightbox" role="dialog" aria-modal="true" aria-label="Imatge ampliada" onClick={() => setLightbox(false)}>
           <img src={asset(`${img.src}.jpg`)} alt={img.alt} onClick={(e) => e.stopPropagation()} />

@@ -5,7 +5,7 @@
 Web de demostració d'una immobiliària digital fictícia amb catàleg filtrable, fitxes completes i
 **visites virtuals 360°** navegables (estil Street View, però dins d'un habitatge).
 
-Tot el contingut és **fictici i generat per aquest mateix projecte**: marca, textos, dades dels
+Tot el contingut dels sis habitatges de demostració és **fictici i generat per aquest mateix projecte**: marca, textos, dades dels
 habitatges, plànols, fotografies (visualitzacions 3D) i panoràmiques 360°. No cal preparar cap material,
 no es fa servir cap API de pagament ni cap servei amb clau.
 
@@ -170,7 +170,9 @@ substituir-les per fotografia i panoràmiques reals (§4). La UI ja diu a cada g
 
 | Recurs | Origen | Llicència / condicions |
 | --- | --- | --- |
-| Imatges i panoràmiques de `public/media/` | Generades pel codi d'aquest projecte | Pròpies del projecte, sense drets de tercers |
+| Imatges i panoràmiques de `public/media/` (excepte `real/`) | Generades pel codi d'aquest projecte | Pròpies del projecte, sense drets de tercers |
+| `public/media/real/casa-real/` | Fotogrames i vídeo editat del vídeo aportat pel propietari del projecte | Material propi; no reutilitzar fora d'aquesta demo sense permís |
+| FFmpeg, OpenCV (`opencv-python-headless`), NumPy | Eines locals del procés de vídeo (no s'inclouen a la web) | LGPL / Apache-2.0 / BSD |
 | Marca, textos, dades i plànols | Creats per a aquesta demo, ficticis | Propis del projecte |
 | Tipografia Instrument Serif | `@fontsource/instrument-serif` (allotjada localment) | SIL Open Font License 1.1 |
 | Tipografia Manrope | `@fontsource-variable/manrope` (allotjada localment) | SIL Open Font License 1.1 |
@@ -184,10 +186,10 @@ proveïdor. Això queda fora d'aquesta demo.
 
 ## 7. Proves
 
-- `npm test`: 11 proves unitàries (filtres i ordenació, serialització a la URL, validació del
+- `npm test`: 16 proves unitàries (filtres i ordenació, dades pendents de l'habitatge real, serialització a la URL, validació del
   formulari, connexió de les quatre estances, conversions de coordenades i existència de tots els
   recursos referenciats).
-- `npm run test:e2e`: 10 escenaris amb Chromium real: portada, cercador, navegació a seccions,
+- `npm run test:e2e`: 13 escenaris amb Chromium real (inclosos 3 de l'habitatge real: fitxa, vídeo, recorregut i errors de càrrega): portada, cercador, navegació a seccions,
   catàleg amb tots els filtres i l'ordenació, fitxa (galeria, lightbox, plànol, formulari amb errors i
   confirmació, similars), visor 360° (canvas renderitzat, arrossegament amb ratolí, roda i botons de
   zoom, clic a punts de navegació, plànol sincronitzat, URL per estança, pantalla completa, avís de
@@ -211,3 +213,61 @@ habitat-immersive/
     ├── viewer/            visor panoràmic Three.js
     └── styles/global.css  identitat visual i animacions
 ```
+
+## 9. Habitatge real a partir d'un vídeo
+
+La fitxa **«Habitatge amb terrassa»** (`/habitatges/casa-real-terrassa`) és una casa real incorporada a
+partir d'un vídeo gravat amb mòbil. No té dades comercials inventades: preu, ubicació, superfícies,
+habitacions i banys es mostren com a «Preu a consultar» o «Informació pendent».
+
+**Què s'ha pogut extreure del vídeo** (98 s, 576 × 1024 vertical, ~31,6 fps, gravat a mà caminant):
+entrada amb porta de fusta, passadís (amb el bany vist de lluny), sala d'estar amb finestral i llar de foc,
+zona de menjador, terrassa àmplia amb zona coberta, jardineres i caseta de fusta, cuina i un dormitori.
+Hi ha molts trams moguts o foscos (sobretot la cuina) i la càmera es desplaça mentre gira.
+
+**Per què no és una visita 360°.** El vídeo no conté cap panoràmica completa. S'ha provat d'unir
+fotogrames amb OpenCV: només se n'obtenen franges de 60–90° deformades, i en alguns casos hi apareixen
+dades personals, així que no s'han fet servir. En lloc d'un 360° fals, la web ofereix:
+
+- **Recorregut visual** (`/visita/casa-real`): set espais en l'ordre del vídeo; dins de cada espai es
+  «gira» passant d'un fotograma real a un altre gravat des del mateix lloc (fletxes, teclat o lliscar);
+  punts de navegació només on el pas cap a l'altre espai es veu a la imatge; zoom, pantalla completa,
+  tira del recorregut i accés al vídeo des de cada espai.
+- **Vídeo per capítols** a la fitxa i dins del recorregut: un muntatge de ~30 s sense àudio.
+
+**Privacitat.** S'han exclòs els fragments i fotogrames on surten un retrat d'una persona, el televisor,
+fotos personals de la nevera i d'un prestatge, un dibuix d'una cara i una placa amb un número. El vídeo
+publicat no té àudio. El vídeo original **no** es puja al repositori (`media-source/` és a `.gitignore`).
+
+### Tornar a processar el vídeo (o afegir-ne un altre)
+
+Requisits locals i gratuïts: FFmpeg i Python 3 amb `opencv-python-headless` i `numpy`
+(`pip install opencv-python-headless numpy`).
+
+1. Copia el vídeo a `media-source/casa-real/original.mp4`. No es modifica mai.
+2. Edita `scripts/video/casa-real.config.json`: per a cada espai, les finestres de temps
+   (`from`/`to`, en segons) d'on triar el fotograma més nítid, i els trams del vídeo editat. Les
+   finestres serveixen també per deixar fora els moments amb dades personals. Si cal, una vista pot
+   difuminar zones amb `"blur": [[x, y, amplada, alçada]]` (en fraccions de la imatge).
+3. Executa `python3 scripts/video/process_video.py scripts/video/casa-real.config.json`.
+
+L'script tria el fotograma més nítid de cada finestra (variància del laplacià), descarta els que són
+gairebé idèntics a un altre ja triat (hash perceptual), aplica un ajust suau (contrast local, brillantor
+en escenes fosques, nitidesa lleugera) i desa:
+
+- `public/media/real/casa-real/frames/*.jpg` (1024 px d'alçada) i `*-sm.jpg` (miniatures de 480 px);
+- `recorregut.mp4` (H.264) i `recorregut.webm` (VP9), sense àudio, amb el pòster;
+- `src/data/casa-real.generated.json`, que la web importa.
+
+Els textos, els punts de navegació (posició en % sobre el fotograma) i les miniatures de cada espai
+es defineixen a `src/data/realHouse.ts`.
+
+### Per a una experiència 360° real de més qualitat
+
+- Una càmera 360° (p. ex. de la gamma de consum) o el mode panoràmica esfèrica d'un mòbil, amb trípode,
+  fent **una presa per estança** des del centre, sense moure's, amb bona llum.
+- Exportar en equirectangular 2:1 (idealment 6000 × 3000 o més) i afegir-les com s'explica a §4: el
+  visor 360° de la web ja les admet, amb punts de navegació i plànol.
+- Per a una reconstrucció 3D navegable de veritat (desplaçament lliure) caldria una captura específica
+  (fotogrametria o *Gaussian splatting* amb centenars de fotos nítides o un escàner LiDAR), fora de
+  l'abast d'un vídeo de mòbil com aquest.
