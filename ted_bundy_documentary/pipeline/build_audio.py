@@ -316,29 +316,56 @@ def ffmpeg(args):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error"] + args, check=True)
 
 
+def level_lines():
+    """Bring every narration line to the same loudness (sentences differ by up to ~3 LU from the TTS)."""
+    import pyloudnorm as pyln
+    v, _ = sf.read(BUILD / "voice_raw.wav", dtype="float32")
+    meter = pyln.Meter(SR)
+    louds = []
+    for l in VT["lines"]:
+        seg = v[int(l["start"] * SR):int(l["end"] * SR)]
+        louds.append(meter.integrated_loudness(seg) if len(seg) > SR * 0.45 else None)
+    target = float(np.median([x for x in louds if x is not None]))
+    gain = np.ones(len(v), np.float32)
+    for l, lu in zip(VT["lines"], louds):
+        if lu is None or not np.isfinite(lu):
+            continue
+        gain[int(l["start"] * SR):int(l["end"] * SR)] = 10 ** (np.clip(target - lu, -4, 4) / 20)
+    k = int(0.03 * SR)  # 30 ms smoothing of gain steps (they fall in silences anyway)
+    gain = np.convolve(gain, np.ones(k) / k, "same").astype(np.float32)
+    sf.write(BUILD / "voice_level.wav", v * gain, SR, subtype="FLOAT")
+
+
 def main():
-    # 1) voice: gentle cleanup, EQ and compression
-    ffmpeg(["-i", str(BUILD / "voice_raw.wav"), "-af",
+    # 1) voice: per-line levelling, gentle cleanup, EQ and compression
+    level_lines()
+    ffmpeg(["-i", str(BUILD / "voice_level.wav"), "-af",
             "highpass=f=75,equalizer=f=250:t=q:w=1.2:g=-2,equalizer=f=3200:t=q:w=1.5:g=2,"
-            "deesser=i=0.25,acompressor=threshold=-20dB:ratio=2.5:attack=8:release=140:makeup=2,"
+            "deesser=i=0.25,acompressor=threshold=-24dB:ratio=3:attack=5:release=150:makeup=3,"
             "alimiter=limit=0.89", "-ar", str(SR), str(BUILD / "voice_proc.wav")])
     v, _ = sf.read(BUILD / "voice_proc.wav")
     v = np.pad(v, (0, max(0, N - len(v))))[:N]
     music = build_music(); sfx = build_sfx()
     sf.write(BUILD / "music.wav", (music / np.abs(music).max() * 0.8).astype(np.float32), SR)
     sf.write(BUILD / "sfx.wav", (sfx / np.abs(sfx).max() * 0.8).astype(np.float32), SR)
-    # 2) automatic ducking from the voice envelope (smooth, attack 60 ms / release 400 ms)
+    # 2) automatic ducking from the voice envelope: holds through short pauses (< 1.4 s) so the
+    #    music does not swell between sentences; attack 60 ms, recovery 0.9 s, depth 5 dB
     hop = int(0.01 * SR)
     rms = np.sqrt(np.convolve(v ** 2, np.ones(hop * 3) / (hop * 3), "same"))
     active = (rms > 10 ** (-38 / 20) * np.abs(v).max()).astype(np.float64)[::hop]
-    g = np.zeros_like(active); a_up, a_dn = 1 - math.exp(-1 / 6), 1 - math.exp(-1 / 40)
+    idx = np.flatnonzero(active)
+    for a0, b0 in zip(idx[:-1], idx[1:]):
+        if 1 < b0 - a0 <= 140:
+            active[a0:b0] = 1.0
+    g = np.zeros_like(active); a_up, a_dn = 1 - math.exp(-1 / 6), 1 - math.exp(-1 / 90)
     for i in range(1, len(g)):
         g[i] = g[i - 1] + (active[i] - g[i - 1]) * (a_up if active[i] > g[i - 1] else a_dn)
     duck = np.interp(np.arange(N), np.arange(len(g)) * hop, g)
-    duck_db = -8.5 * duck
+    duck_db = -5.0 * duck
     m_gain = 10 ** (duck_db / 20)
-    music_n = music / np.sqrt((music ** 2).mean()) * 10 ** (-25 / 20)
-    sfx_n = sfx / np.abs(sfx).max() * 10 ** (-9 / 20)
+    music_n = music / np.sqrt((music ** 2).mean()) * 10 ** (-28.5 / 20)
+    sfx_n = sfx / np.abs(sfx).max()
+    sfx_n = np.tanh(sfx_n * 2.2) / 2.2 * 10 ** (-12 / 20)  # soft-limit hits, then 5 dB lower overall
     voice_n = v / np.sqrt((v[np.abs(v) > 1e-4] ** 2).mean()) * 10 ** (-17 / 20)
     mix = voice_n[:, None] + music_n * m_gain[:, None] + sfx_n * (1 - 0.3 * duck)[:, None]
     # short fades at the very start/end
@@ -347,13 +374,17 @@ def main():
     sf.write(BUILD / "mix_pre.wav", mix.astype(np.float32), SR, subtype="FLOAT")
     sf.write(BUILD / "stem_voice_pre.wav", np.repeat(voice_n[:, None], 2, 1).astype(np.float32), SR, subtype="FLOAT")
     sf.write(BUILD / "stem_bg_pre.wav", (music_n * m_gain[:, None] + sfx_n * (1 - 0.3 * duck)[:, None]).astype(np.float32), SR, subtype="FLOAT")
-    # 3) loudness: two-pass EBU R128 to -14 LUFS, -2.5 dBTP (headroom for AAC) (YouTube-friendly)
+    # 3) gentle bus compression, then two-pass EBU R128 to -14 LUFS, -3 dBTP (headroom for AAC)
+    ffmpeg(["-i", str(BUILD / "mix_pre.wav"), "-af", "acompressor=threshold=-20dB:ratio=1.8:attack=20:release=300:makeup=1",
+            "-c:a", "pcm_f32le", str(BUILD / "mix_bus.wav")])
+    import shutil
+    shutil.move(BUILD / "mix_bus.wav", BUILD / "mix_pre.wav")
     r = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(BUILD / "mix_pre.wav"), "-af",
-                        "loudnorm=I=-14:TP=-2.5:LRA=11:print_format=json", "-f", "null", "-"], capture_output=True, text=True)
+                        "loudnorm=I=-14:TP=-3:LRA=7:print_format=json", "-f", "null", "-"], capture_output=True, text=True)
     import json, re
     st = json.loads(re.findall(r"\{[^{}]*\}", r.stderr, re.S)[-1])
     ffmpeg(["-i", str(BUILD / "mix_pre.wav"), "-af",
-            f"loudnorm=I=-14:TP=-2.5:LRA=11:measured_I={st['input_i']}:measured_TP={st['input_tp']}:"
+            f"loudnorm=I=-14:TP=-3:LRA=7:measured_I={st['input_i']}:measured_TP={st['input_tp']}:"
             f"measured_LRA={st['input_lra']}:measured_thresh={st['input_thresh']}:offset={st['target_offset']}:linear=true",
             "-ar", str(SR), str(BUILD / "mix.wav")])
     print("mix written; first pass measured", st["input_i"], "LUFS")

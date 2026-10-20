@@ -13,7 +13,7 @@ $PY thumbnail.py          # output/ted_bundy_thumbnail.jpg
 $PY render.py ${1:-}      # pass --preview for a fast half-res pass
 if [ "${1:-}" != "--preview" ]; then
   # render.py already encodes with a capped CRF (~4 Mb/s); mux the mix as AAC 192k
-  ffmpeg -y -loglevel error -i ../build/video_final.mp4 -i ../build/mix.wav -c:v copy -c:a aac -b:a 192k \
+  ffmpeg -y -loglevel error -i ../build/video_final.mp4 -i ../build/mix.wav -c:v copy -af "alimiter=limit=0.63:attack=1:release=50:level=false" -c:a aac -b:a 256k \
     -movflags +faststart -shortest ../output/ted_bundy_final.mp4
   $PY qc.py ../output/ted_bundy_final.mp4
 fi
