@@ -1,0 +1,55 @@
+shot,start_tc,end_tc,start_s,end_s,duration_s,chapter,historical_period,visual_type,transition,asset_path,asset_status,subtitles,narration_during_shot,notes
+1,00:00.000,00:01.941,0.0,1.941,1.941,0 HOOK,Hook,silhouette,dip,generated:silhouette,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,He looked like someone you could,"Cold open: the trustworthy public image (illustrative silhouette, no likeness)"
+2,00:01.941,00:02.584,1.941,2.584,0.643,0 HOOK,Hook,word,flash,generated:word,generated (this pipeline),on,trust.,Hard cut on 'trust'
+3,00:02.584,00:04.102,2.584,4.102,1.518,0 HOOK,Hook,silhouette,cut,generated:silhouette,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,That was part of what made,"Same figure, light turns cold: the mask"
+4,00:04.102,00:05.409,4.102,5.409,1.307,0 HOOK,Hook,name,cut,generated:name,generated (this pipeline),on,Ted Bundy so frightening.,Name reveal; red slash on 'frightening'
+5,00:05.409,00:06.309,5.409,6.309,0.9,0 HOOK,Hook,title,flash,generated:title,generated (this pipeline),off (text is the visual),,Title card in the breath before Chapter 1
+6,00:06.309,00:07.274,6.309,7.274,0.965,1 THE PUBLIC IMAGE,Early life – early 1970s,chapter,dip,generated:chapter,generated (this pipeline),on,In the early,Chapter card
+7,00:07.274,00:08.709,7.274,8.709,1.435,1 THE PUBLIC IMAGE,Early 1970s,date,cut,generated:date,generated (this pipeline),on,"1970s,",Period stamp
+8,00:08.709,00:11.117,8.709,11.117,2.408,1 THE PUBLIC IMAGE,Early 1970s,map,cut,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,Bundy was a university student in,University years in Seattle
+9,00:11.117,00:13.207,11.117,13.207,2.09,1 THE PUBLIC IMAGE,1972,casefile,cut,generated:casefile,generated (this pipeline),on,Washington state. He seemed,"Verified background facts (editorial graphic, not a police document)"
+10,00:13.207,00:14.116,13.207,14.116,0.909,1 THE PUBLIC IMAGE,Early 1970s,word,cut,generated:word,generated (this pipeline),off (text is the visual),intelligent and,Kinetic word
+11,00:14.116,00:15.308,14.116,15.308,1.192,1 THE PUBLIC IMAGE,Early 1970s,word,cut,generated:word,generated (this pipeline),off (text is the visual),charming. But,Kinetic word
+12,00:15.308,00:16.538,15.308,16.538,1.23,1 THE PUBLIC IMAGE,Early 1970s,silhouette,cut,generated:silhouette,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,"behind that image,",'Behind that image' — face falls into shadow
+13,00:16.538,00:18.561,16.538,18.561,2.023,1 THE PUBLIC IMAGE,1974,frames,cut,generated:frames,generated (this pipeline),on,young women began disappearing.,Empty frames fading — disappearances (no victim likeness used)
+14,00:18.561,00:19.634,18.561,19.634,1.073,2 THE FIRST KNOWN CASES,1974,chapter,dip,generated:chapter,generated (this pipeline),on,In,Chapter card
+15,00:19.634,00:21.191,19.634,21.191,1.557,2 THE FIRST KNOWN CASES,1974,date,cut,generated:date,generated (this pipeline),on,"1974,",Year stamp
+16,00:21.191,00:23.300,21.191,23.3,2.109,2 THE FIRST KNOWN CASES,1974,map,cut,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,attacks in the Pacific Northwest,Region of the 1974 cases
+17,00:23.300,00:24.483,23.3,24.483,1.183,2 THE FIRST KNOWN CASES,1974,streetlight,cut,generated:streetlight,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,sparked fear.,Atmosphere: fear (illustrative)
+18,00:24.483,00:27.281,24.483,27.281,2.798,2 THE FIRST KNOWN CASES,1974,casefile,cut,generated:casefile,generated (this pipeline),on,"Witnesses described a polite, clean-cut man","Witness descriptions, as narrated"
+19,00:27.281,00:28.171,27.281,28.171,0.89,2 THE FIRST KNOWN CASES,July 1974,silhouette,cut,generated:silhouette,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,who sometimes,"Lake Sammamish witnesses: man named 'Ted', arm in a sling (illustrative)"
+20,00:28.171,00:30.090,28.171,30.09,1.919,2 THE FIRST KNOWN CASES,July 1974,casefile,cut,generated:casefile,generated (this pipeline),on,pretended to need help.,Documented ruse
+21,00:30.090,00:33.054,30.09,33.054,2.964,2 THE FIRST KNOWN CASES,1974–1975,board,cut,generated:board,generated (this pipeline),on,Investigators struggled to connect the cases,Investigators unable to link cases across states
+22,00:33.054,00:36.012,33.054,36.012,2.958,2 THE FIRST KNOWN CASES,Fall 1974,map,cut,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,as Bundy moved between states.,Moves to Utah
+23,00:36.012,00:38.002,36.012,38.002,1.99,2 THE FIRST KNOWN CASES,16 Aug 1975,date,flash,generated:date,generated (this pipeline),on,"In 1975,",Date of the traffic stop
+24,00:38.002,00:39.980,38.002,39.98,1.978,2 THE FIRST KNOWN CASES,16 Aug 1975,map,cut,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,he was arrested in Utah after,Location of the 1975 arrest
+25,00:39.980,00:41.171,39.98,41.171,1.191,2 THE FIRST KNOWN CASES,16 Aug 1975,policelights,cut,generated:policelights,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,police stopped his,Traffic stop at night (illustrative)
+26,00:41.171,00:42.836,41.171,42.836,1.665,2 THE FIRST KNOWN CASES,1975,beetle,cut,generated:beetle,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,Volkswagen Beetle.,"Volkswagen Beetle (line illustration, not his car)"
+27,00:42.836,00:43.979,42.836,43.979,1.143,3 CONVICTION AND ESCAPES,1975,chapter,dip,generated:chapter,generated (this pipeline),on,Evidence linked him,Chapter card
+28,00:43.979,00:45.480,43.979,45.48,1.501,3 CONVICTION AND ESCAPES,Aug 1975,casefile,cut,generated:casefile,generated (this pipeline),on,"to crimes, and he was",Items reported found by Utah police
+29,00:45.480,00:47.100,45.48,47.1,1.62,3 CONVICTION AND ESCAPES,1976,stamp,cut,generated:stamp,generated (this pipeline),on,convicted of kidnapping.,Kidnapping conviction (1976)
+30,00:47.100,00:49.802,47.1,49.802,2.702,3 CONVICTION AND ESCAPES,1976–1977,timeline,cut,generated:timeline,generated (this pipeline),on,But the story was far from over.,Time moves on
+31,00:49.802,00:51.632,49.802,51.632,1.83,3 CONVICTION AND ESCAPES,1977,date,flash,generated:date,generated (this pipeline),on,"In 1977,",Year stamp
+32,00:51.632,00:53.259,51.632,53.259,1.627,3 CONVICTION AND ESCAPES,7 Jun 1977,map,cut,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,Bundy escaped custody,First escape: courthouse window
+33,00:53.259,00:55.241,53.259,55.241,1.982,3 CONVICTION AND ESCAPES,30 Dec 1977,map,flash,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,twice in Colorado.,Second escape: jail ceiling
+34,00:55.241,00:56.247,55.241,56.247,1.006,4 FLORIDA,Jan 1978,chapter,dip,generated:chapter,generated (this pipeline),on,He eventually,Chapter card
+35,00:56.247,00:57.571,56.247,57.571,1.324,4 FLORIDA,Jan 1978,map,cut,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,"reached Florida,",To Florida (route simplified)
+36,00:57.571,00:59.711,57.571,59.711,2.14,4 FLORIDA,15 Jan 1978,date,flash,generated:date,generated (this pipeline),on,"where, in January 1978,",Date of the Chi Omega attack
+37,00:59.711,01:01.340,59.711,61.34,1.629,4 FLORIDA,15 Jan 1978,location,cut,generated:location,generated (this pipeline),on,he attacked a sorority,Location card (no images of the scene)
+38,01:01.340,01:04.195,61.34,64.195,2.855,4 FLORIDA,15 Jan 1978,memorial,dip,generated:memorial,generated (this pipeline),on,"house, killing two young women.",Victims named respectfully
+39,01:04.195,01:05.646,64.195,65.646,1.451,4 FLORIDA,15 Feb 1978,map,cut,assets/data/states-albers-10m.json,generated map; boundaries: US Census Bureau via us-atlas 3.0.1 (public domain/ISC),on,"Weeks later, he was",Pensacola arrest location
+40,01:05.646,01:08.028,65.646,68.028,2.382,4 FLORIDA,15 Feb 1978,stamp,flash,generated:stamp,generated (this pipeline),on,arrested in Pensacola.,Final arrest
+41,01:08.028,01:09.249,68.028,69.249,1.221,5 THE TRIALS,1979,chapter,dip,generated:chapter,generated (this pipeline),on,His trials became,Chapter card
+42,01:09.249,01:10.982,69.249,70.982,1.733,5 THE TRIALS,1979,tv,cut,generated:tv,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,a national spectacle.,Televised trial (illustrative TV set)
+43,01:10.982,01:13.542,70.982,73.542,2.56,5 THE TRIALS,1979,spotlight,cut,generated:spotlight,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,"Bundy sometimes represented himself,",Represented himself (illustrative stage light)
+44,01:13.542,01:15.929,73.542,75.929,2.387,5 THE TRIALS,1979,spotlight,cut,generated:spotlight,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,turning the courtroom into a stage.,Courtroom as a stage — pull back
+45,01:15.929,01:18.410,75.929,78.41,2.481,5 THE TRIALS,July 1979,date,cut,generated:date,generated (this pipeline),on,"In 1979, he was",Verdict month
+46,01:18.410,01:21.016,78.41,81.016,2.606,5 THE TRIALS,July 1979,stamp,cut,generated:stamp,generated (this pipeline),on,convicted of the sorority house murders.,Conviction
+47,01:21.016,01:22.104,81.016,82.104,1.088,6 PRISON AND EXECUTION,1980–1989,chapter,dip,generated:chapter,generated (this pipeline),on,In,Chapter card
+48,01:22.104,01:24.281,82.104,84.281,2.177,6 PRISON AND EXECUTION,1980–1989,years,cut,generated:years,generated (this pipeline),on,"1989, Bundy was",A decade on death row
+49,01:24.281,01:27.042,84.281,87.042,2.761,6 PRISON AND EXECUTION,24 Jan 1989,execdate,cut,generated:execdate,generated (this pipeline),on,executed in Florida.,"Execution date — slow, quiet"
+50,01:27.042,01:29.833,87.042,89.833,2.791,6 PRISON AND EXECUTION,Reflection,silhouette,dip,generated:silhouette,"generated (this pipeline) — ILLUSTRATIVE, labelled on screen",on,His case left a disturbing question.,"Callback to the opening image, dissolving"
+51,01:29.833,01:35.885,89.833,95.885,6.052,6 PRISON AND EXECUTION,Reflection,question,dip,generated:question,generated (this pipeline),off (text is the visual),How could someone hide extreme violence behind an ordinary public image?,"The central question, word-synced"
+52,01:35.885,01:38.360,95.885,98.36,2.475,6 PRISON AND EXECUTION,Reflection,statement,cut,generated:statement,generated (this pipeline),off (text is the visual),Charm is not proof of character.,Closing line 1
+53,01:38.360,01:41.870,98.36,101.87,3.51,6 PRISON AND EXECUTION,Reflection,statement,cut,generated:statement,generated (this pipeline),off (text is the visual),Appearances never tell the whole story.,Closing line 2
+54,01:41.870,01:49.470,101.87,109.47,7.6,6 PRISON AND EXECUTION,End,endcard,dip,generated:endcard,generated (this pipeline),off (text is the visual),,Comment prompt + memorial

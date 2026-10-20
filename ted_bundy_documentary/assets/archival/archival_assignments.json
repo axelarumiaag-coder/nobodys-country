@@ -1,0 +1,29 @@
+{
+  "_instructions": "Assign VERIFIED, properly licensed archival images (e.g. downloaded by descarrega_material.py into the folders here) to slots. 'file' is relative to assets/archival/. Leave a slot null to keep the illustrative graphic. Re-run ./run_all.sh afterwards.",
+  "slots": {
+    "hook_portrait": null,
+    "uw_campus": null,
+    "portrait_1970s": null,
+    "vw_beetle": null,
+    "trial_1979": null,
+    "doc_1980": null,
+    "thumbnail_portrait": null
+  },
+  "_example": {
+    "file": "06_Preso_i_ultims_anys_1980-1989/0XX_TedBundy1980DOCPhotoColor.jpg",
+    "caption": "FLORIDA DEPT. OF CORRECTIONS PHOTO \u00b7 1980",
+    "credit": "Florida Dept. of Corrections \u2014 public domain (verify on Commons page)",
+    "zoom": [
+      1.0,
+      1.08
+    ],
+    "x": [
+      0.5,
+      0.5
+    ],
+    "y": [
+      0.4,
+      0.38
+    ]
+  }
+}
