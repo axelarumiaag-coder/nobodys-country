@@ -1,62 +1,68 @@
-TED BUNDY — THE PERFECT MASK · QUALITY CONTROL REPORT
-============================================================
+TED BUNDY: THE LIFE AND CRIMES — QUALITY CONTROL REPORT (LONG CUT)
+==================================================================
 
-Each MEASURED result below was produced by pipeline/qc.py on output/ted_bundy_final.mp4.
+Each MEASURED result below was produced by pipeline/qc.py and pipeline/loudness_scan.py on output/ted_bundy_final.mp4.
 
-1. TECHNICAL (MEASURED)
-  Video: h264 1920x1080 30/1 yuv420p; 3284 frames (expected 3284); duration 109.47 s
-  Audio: aac 48000 Hz 2 ch, AAC 320 kb/s; duration 109.46 s (A/V difference 6 ms)
-  File: 91.9 MB, two-pass H.264 at 6.4 Mb/s (CRF-15 master kept locally in build/, not committed: 600 MB)
+1. DELIVERABLE
+  Video: h264 1920x1080 25/1 yuv420p · 41274 frames (expected 41274) · 27.52 min
+  Audio: aac 48000 Hz 2 ch · AAC 256 kb/s · A/V difference 16 ms
+  File: about 892 MiB (x264 capped CRF 21, max 4.2 Mb/s). It is not in git: it exceeds GitHub's 100 MB limit, and Git LFS
+        is blocked here (lfs.github.com returned 403). It was delivered in chat as 3 parts of about 9 min, and also as a single
+        smaller version (ted_bundy_final_single_480MB.mp4, 2.2 Mb/s).
   Full decode: no decoder errors
-  True-black frames (pix_th 0.02): [['109.333', '109.433', '0.1']] -> only the deliberate fade-out in the final 0.1 s
-  Loudness: -14.3 LUFS integrated, LRA 2.6 LU, true peak -2.4 dBFS, clipped samples 0
-  Voice vs. background (pre-mix stems): narration -14.0 LUFS; music+SFX approx. -28.6 LUFS (about 14.6 LU below), ducked a further 8.5 dB under speech
-  Intelligibility: Whisper small.en (local) transcribed each narration line from the FINAL MIX (music included). Mean word error rate = 0.0% across 22 lines
-  Subtitle sync: 33 cues measured against real voice onsets; mean -72.5 ms (cues lead the voice slightly), max |offset| 145 ms
-  SRT text equals narration text word for word: True
-  Editing rhythm: 54 shots; median 1.92 s; shortest 0.64 s; longest 7.60 s (the end card). Longer holds are reserved for the memorial, the execution date and the final question
-  Waveform inspected (build/waveform_final.png): even level, no clipping, dips at the deliberate pauses, quiet atmospheric tail
-  Visual review: a still from the midpoint of every shot (build/qc_stills_final/) and full-resolution crops were inspected for layout, legibility and compression artifacts
+  True-black frames: [['1641.48', '1641.52', '0.04'], ['1650.84', '1650.92', '0.08']]. That is one frame of the deliberate dip into the end card and the final fade-out;
+  there are no black frames anywhere else.
 
-2. WHAT WAS NOT CHECKED, OR CHECKED ONLY BY PROXY
-  - Nobody listened to the audio on headphones. The mix was checked by measurement instead: loudness, peaks, stems, waveform and ASR.
-  - Nobody watched the video in real time. It was checked frame by frame from stills at every shot, plus automated black-frame and decode checks.
-  - Word timing inside each phrase is estimated from detected pauses. Phrase starts were measured, and the max error was 145 ms.
+2. AUDIO (MEASURED)
+  Loudness -14.2 LUFS integrated · LRA 2.0 LU · true peak -2.6 dBTP · clipped samples 0
+  Revision after the user reported uneven volume (before -> after):
+    background swell in narration pauses   +5.3 LU -> +0.8 LU  (ducking now holds through gaps < 1.4 s; depth 5 dB, 0.9 s recovery)
+    loudest background moment              -21.6 -> -25.6 LUFS momentary (SFX soft-limited, 5 dB lower)
+    sentence-to-sentence spread (final mix) 2.4 LU -> 1.5 LU (std 0.22); every line levelled to the median
+    voice momentary range p5-p95           11.4 LU -> 9.6 LU
+    true peak after AAC encode             +2.9 dBTP (192k encoder overshoot) -> -2.6 dBTP (256k + -4 dBFS limiter)
+  Intelligibility: local Whisper small.en transcribed all 249 narration lines from the FINAL MIX. Mean WER 1.3%.
+    29 lines differ. Most are spelling only: numerals vs words ('30'/'thirty', '21-year-old'), and homophones Lynda/Linda,
+    Caryn/Karen, Johnnie/Johnny, Debra/Deborah. 'Chi Omega' is transcribed 'Kai Omega', which is the correct pronunciation.
+    'DaRonch' is heard as 'Da Ranch', close to the real pronunciation (duh-RONCH).
+    Four mispronunciations found in the first QC pass ('Bundy' read as 'Bandhi' twice, 'Eleanor', 'Georgeann') were re-synthesized,
+    verified with ASR and spliced in at the original timing (tempo change of 2.4% or less). Their lines now transcribe correctly.
+  Subtitles: 401 cues measured against real voice onsets; mean -72.2 ms (cues lead slightly), max |offset| 150 ms.
+    The SRT text matches the narration word for word: True
 
-3. HISTORICAL VERIFICATION
-  Script edits made for accuracy (see ted_bundy_script.txt):
-   - 'Days later ... Pensacola' -> 'Weeks later': Chi Omega attack 15 Jan 1978; Pensacola arrest 15 Feb 1978.
-   - 'convicted for the Florida attacks' (1979) -> 'convicted of the sorority house murders': the Miami trial (verdict July 1979)
-     concerned Chi Omega. The Kimberly Leach conviction came in 1980 and is not mentioned in the narration.
-   - 'well-dressed man' -> 'polite, clean-cut man', closer to the reported 1974 witness descriptions.
-  On-screen dates and places used (well documented in the standard record; recheck before publication):
-   - born 24 Nov 1946; B.A. psychology, University of Washington, 1972
-   - 1974 cases in Washington and Oregon; Lake Sammamish, July 1974: witnesses described a man ('Ted') with his arm in a sling asking women for help
-   - fall 1974: moved to Salt Lake City for law school (University of Utah)
-   - 16 Aug 1975: traffic stop and arrest in Granger, Utah; ski mask, crowbar, handcuffs and rope reported found in the car
-   - 1976: aggravated kidnapping conviction (Utah)
-   - 7 Jun 1977: escape from the Pitkin County Courthouse, Aspen
-   - 30 Dec 1977: escape from the Garfield County Jail, Glenwood Springs
-   - 15 Jan 1978: Chi Omega, Florida State University, Tallahassee; Lisa Levy and Margaret Bowman killed
-   - 15 Feb 1978: arrested in Pensacola
-   - 1979: Miami trial, televised nationwide; he took part in his own defence; convicted July 1979; sentenced to death 31 Jul 1979
-   - 24 Jan 1989: executed at Florida State Prison, near Starke
-  Points of uncertainty:
-   - 'Televised nationwide' is the commonly reported description of the 1979 trial coverage.
-   - The colour on the 1974-1975 evidence board (WA/OR/UT/CO) shows the states where cases were later attributed to him. It does not show what investigators knew at the time.
-   - The route lines on the maps are simplified and labelled as such.
-  No quotations, witness statements, headlines or documents were invented. Case-file cards are labelled as editorial graphics.
+3. EDIT (MEASURED)
+  421 shots · median 3.65 s · longest 14.1 s (the end card). Holds over 7 s are sentence-synced text or the memorial roll.
+  Shot mix: archive 75, silhouette 55, map 40, rain 32, frames 23, date 22, casefile 20, wordstack 17, say 16, streetlight 16, tv 15, policelights 12, stamp 11, board 11, chapter 10, word 9, location 6, spotlight 6, timeline 5, question 5, memorial 4, victim 2, years 2, title 1, family 1, namelist 1, lineup 1, execdate 1, roll 1, endcard 1
+  32 archival images used in 79 placements (see asset_manifest.csv). 20 pack images excluded, with reasons (wrong place, irrelevant,
+  misleading, duplicates).
+  Visual review: one still per shot type plus random samples of archive shots, inspected for layout, legibility, captions and
+  overlap with subtitles.
 
-4. ASSETS AND REMAINING LIMITATIONS
-  - NO ARCHIVAL PHOTOGRAPHS: the cloud environment's network policy blocked commons.wikimedia.org / upload.wikimedia.org,
-    so descarrega_material.py could not run. Every picture is a map, date card, typographic card or an illustration labelled
-    'ILLUSTRATION'. No likeness of Bundy, the victims or any real vehicle or place is shown. The photo-slot code path has been
-    tested; assign verified photos in assets/archival/archival_assignments.json and run ./run_all.sh.
-  - THE THUMBNAIL uses the documentary's illustrative silhouette, not a portrait. It switches automatically when a verified
-    'thumbnail_portrait' is assigned. Headline chosen: 'THE PERFECT MASK'. It matches the title card and hook, and it stays
-    legible at 168x94 px (checked).
-  - PEXELS: pexels.com was blocked as well. To my knowledge Pexels has no music library in any case. The whole score and
-    all sound effects are original syntheses (build_audio.py), and none is presented as an authentic recording.
-  - THE NARRATION is a synthetic voice (Kokoro TTS, Apache-2.0). The end card says so. Use YouTube's altered/synthetic content
-    disclosure if it applies to your upload.
-  - SUBTITLES are burned in. Upload ted_bundy_subtitles.srt as well, so viewers get selectable captions.
+4. NOT CHECKED, OR CHECKED ONLY BY PROXY
+  - Nobody listened by ear or on headphones; the audio was checked by measurement and ASR.
+  - Nobody watched the full 27 minutes in real time; stills and automated checks were used. Watch it before publishing.
+  - Image licences are taken from each file's Commons provenance (catalog.json) and must be confirmed on each Commons page.
+
+5. HISTORICAL VERIFICATION
+  Script corrections: (1) University of Washington: psychology in 1970-72, not 'during the 1960s'. (2) Caryn Campbell was a nurse,
+  not a nursing student.
+  On-screen facts added (well documented; recheck before publication):
+   - born 24 Nov 1946, Burlington VT; raised by grandparents in Philadelphia; Tacoma, early 1950s; stepfather Johnnie Bundy (1951)
+   - B.A. psychology, UW 1972; Seattle Crisis Clinic 1971 with Ann Rule; 'The Stranger Beside Me' first published 1980
+   - 1974 victims named in the script, with month and place: Healy (Seattle, Feb), Manson (Olympia, Mar), Rancourt (Ellensburg, Apr),
+   -   Parks (Corvallis OR, May), Ball (Burien, Jun), Hawkins (Seattle, Jun)
+   - Carol DaRonch, 8 Nov 1974, Fashion Place Mall, Murray UT; Debra Kent, Viewmont HS, Bountiful (handcuff key found there)
+   - 16 Aug 1975 Granger UT arrest; lineup Oct 1975; convicted March 1976, sentenced 1-15 years; Utah State Prison
+   - Caryn Campbell, 12 Jan 1975, Snowmass; charged 1976; Aspen escape 7 Jun 1977, recaptured 13 Jun 1977; Glenwood Springs 30 Dec 1977
+   - FBI Ten Most Wanted Feb 1978; Chi Omega 15 Jan 1978; Kimberly Leach 9 Feb 1978, Lake City; Pensacola arrest 15 Feb 1978
+   - Miami trial June 1979, verdict 24 Jul 1979, death sentence 31 Jul 1979; Leach trial Orlando Jan 1980, guilty Feb 1980
+   - bite-mark comparison criticized (NAS 2009, PCAST 2016); ViCAP launched 1985; execution 24 Jan 1989, Florida State Prison near Starke
+   - confessions spanned seven states (WA, OR, ID, UT, CO, CA, FL)
+  Labelling: every generated scene (silhouettes, rain, streetlight, police lights, TV, spotlight, lineup) carries an ILLUSTRATION tag.
+  Generic Beetle and police-car photos are captioned 'ILLUSTRATIVE, NOT BUNDY'S CAR'. Museum photos of his VW are captioned as
+  modern photos. Victims are shown only through period newspaper portraits, with name and date; there is no graphic content.
+
+6. REMAINING LIMITATIONS
+  - The narration is synthetic (Kokoro TTS); the end card says so. Use YouTube's synthetic-content disclosure if it applies.
+  - Pexels was unreachable. All music and SFX are original syntheses, and none is presented as an authentic recording.
+  - The 27-minute length follows the user's choice to keep the full script, instead of the originally requested 10 minutes.
