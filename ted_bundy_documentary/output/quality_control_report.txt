@@ -1,0 +1,62 @@
+TED BUNDY — THE PERFECT MASK · QUALITY CONTROL REPORT
+============================================================
+
+Each MEASURED result below was produced by pipeline/qc.py on output/ted_bundy_final.mp4.
+
+1. TECHNICAL (MEASURED)
+  Video: h264 1920x1080 30/1 yuv420p; 3284 frames (expected 3284); duration 109.47 s
+  Audio: aac 48000 Hz 2 ch, AAC 320 kb/s; duration 109.46 s (A/V difference 6 ms)
+  File: 91.9 MB, two-pass H.264 at 6.4 Mb/s (CRF-15 master kept locally in build/, not committed: 600 MB)
+  Full decode: no decoder errors
+  True-black frames (pix_th 0.02): [['109.333', '109.433', '0.1']] -> only the deliberate fade-out in the final 0.1 s
+  Loudness: -14.3 LUFS integrated, LRA 2.6 LU, true peak -2.4 dBFS, clipped samples 0
+  Voice vs. background (pre-mix stems): narration -14.0 LUFS; music+SFX approx. -28.6 LUFS (about 14.6 LU below), ducked a further 8.5 dB under speech
+  Intelligibility: Whisper small.en (local) transcribed each narration line from the FINAL MIX (music included). Mean word error rate = 0.0% across 22 lines
+  Subtitle sync: 33 cues measured against real voice onsets; mean -72.5 ms (cues lead the voice slightly), max |offset| 145 ms
+  SRT text equals narration text word for word: True
+  Editing rhythm: 54 shots; median 1.92 s; shortest 0.64 s; longest 7.60 s (the end card). Longer holds are reserved for the memorial, the execution date and the final question
+  Waveform inspected (build/waveform_final.png): even level, no clipping, dips at the deliberate pauses, quiet atmospheric tail
+  Visual review: a still from the midpoint of every shot (build/qc_stills_final/) and full-resolution crops were inspected for layout, legibility and compression artifacts
+
+2. WHAT WAS NOT CHECKED, OR CHECKED ONLY BY PROXY
+  - Nobody listened to the audio on headphones. The mix was checked by measurement instead: loudness, peaks, stems, waveform and ASR.
+  - Nobody watched the video in real time. It was checked frame by frame from stills at every shot, plus automated black-frame and decode checks.
+  - Word timing inside each phrase is estimated from detected pauses. Phrase starts were measured, and the max error was 145 ms.
+
+3. HISTORICAL VERIFICATION
+  Script edits made for accuracy (see ted_bundy_script.txt):
+   - 'Days later ... Pensacola' -> 'Weeks later': Chi Omega attack 15 Jan 1978; Pensacola arrest 15 Feb 1978.
+   - 'convicted for the Florida attacks' (1979) -> 'convicted of the sorority house murders': the Miami trial (verdict July 1979)
+     concerned Chi Omega. The Kimberly Leach conviction came in 1980 and is not mentioned in the narration.
+   - 'well-dressed man' -> 'polite, clean-cut man', closer to the reported 1974 witness descriptions.
+  On-screen dates and places used (well documented in the standard record; recheck before publication):
+   - born 24 Nov 1946; B.A. psychology, University of Washington, 1972
+   - 1974 cases in Washington and Oregon; Lake Sammamish, July 1974: witnesses described a man ('Ted') with his arm in a sling asking women for help
+   - fall 1974: moved to Salt Lake City for law school (University of Utah)
+   - 16 Aug 1975: traffic stop and arrest in Granger, Utah; ski mask, crowbar, handcuffs and rope reported found in the car
+   - 1976: aggravated kidnapping conviction (Utah)
+   - 7 Jun 1977: escape from the Pitkin County Courthouse, Aspen
+   - 30 Dec 1977: escape from the Garfield County Jail, Glenwood Springs
+   - 15 Jan 1978: Chi Omega, Florida State University, Tallahassee; Lisa Levy and Margaret Bowman killed
+   - 15 Feb 1978: arrested in Pensacola
+   - 1979: Miami trial, televised nationwide; he took part in his own defence; convicted July 1979; sentenced to death 31 Jul 1979
+   - 24 Jan 1989: executed at Florida State Prison, near Starke
+  Points of uncertainty:
+   - 'Televised nationwide' is the commonly reported description of the 1979 trial coverage.
+   - The colour on the 1974-1975 evidence board (WA/OR/UT/CO) shows the states where cases were later attributed to him. It does not show what investigators knew at the time.
+   - The route lines on the maps are simplified and labelled as such.
+  No quotations, witness statements, headlines or documents were invented. Case-file cards are labelled as editorial graphics.
+
+4. ASSETS AND REMAINING LIMITATIONS
+  - NO ARCHIVAL PHOTOGRAPHS: the cloud environment's network policy blocked commons.wikimedia.org / upload.wikimedia.org,
+    so descarrega_material.py could not run. Every picture is a map, date card, typographic card or an illustration labelled
+    'ILLUSTRATION'. No likeness of Bundy, the victims or any real vehicle or place is shown. The photo-slot code path has been
+    tested; assign verified photos in assets/archival/archival_assignments.json and run ./run_all.sh.
+  - THE THUMBNAIL uses the documentary's illustrative silhouette, not a portrait. It switches automatically when a verified
+    'thumbnail_portrait' is assigned. Headline chosen: 'THE PERFECT MASK'. It matches the title card and hook, and it stays
+    legible at 168x94 px (checked).
+  - PEXELS: pexels.com was blocked as well. To my knowledge Pexels has no music library in any case. The whole score and
+    all sound effects are original syntheses (build_audio.py), and none is presented as an authentic recording.
+  - THE NARRATION is a synthetic voice (Kokoro TTS, Apache-2.0). The end card says so. Use YouTube's altered/synthetic content
+    disclosure if it applies to your upload.
+  - SUBTITLES are burned in. Upload ted_bundy_subtitles.srt as well, so viewers get selectable captions.
