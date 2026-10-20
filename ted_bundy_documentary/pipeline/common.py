@@ -9,7 +9,7 @@ OUT = ROOT / "output"
 ARCHIVAL = ROOT / "assets" / "archival"
 MODELS = Path("/opt/models")
 
-W, H, FPS = 1920, 1080, 30
+W, H, FPS = 1920, 1080, 25
 SR = 48000
 VOICE_OFFSET = 0.30  # seconds of drone before the first word
 

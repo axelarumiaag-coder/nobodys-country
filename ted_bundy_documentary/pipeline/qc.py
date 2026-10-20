@@ -42,7 +42,7 @@ a = [s for s in p["streams"] if s["codec_type"] == "audio"][0]
 R["streams"] = {"video": f"{v['codec_name']} {v['width']}x{v['height']} {v['r_frame_rate']} {v.get('pix_fmt')}",
                 "audio": f"{a['codec_name']} {a['sample_rate']} Hz {a['channels']} ch",
                 "video_duration": float(v.get("duration", 0)), "audio_duration": float(a.get("duration", 0)),
-                "frames": int(v.get("nb_frames", 0)), "expected_frames": int(round(TL["duration"] * 30))}
+                "frames": int(v.get("nb_frames", 0)), "expected_frames": int(round(TL["duration"] * TL.get("fps", 30)))}
 
 # 2) decode the whole file (catches corrupt frames) + true black frames
 bd = run(["ffmpeg", "-hide_banner", "-v", "error", "-i", VID, "-vf", "blackdetect=d=0.04:pix_th=0.02:pic_th=0.995", "-an", "-f", "null", "-"])
@@ -101,7 +101,7 @@ sd = BUILD / f"qc_stills_{NAME}"
 sd.mkdir(exist_ok=True)
 for s in TL["shots"]:
     t = (s["start"] + s["end"]) / 2
-    run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{t:.3f}", "-i", VID, "-frames:v", "1", "-vf", "scale=640:-1", str(sd / f"shot{s['index']:02d}.png")])
+    run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{t:.3f}", "-i", VID, "-frames:v", "1", "-vf", "scale=480:-1", str(sd / f"shot{s['index']:03d}.png")])
 save_json(BUILD / f"qc_{NAME}.json", R)
 print(json.dumps({k: R[k] for k in ("streams", "black_segments", "loudness", "asr_mean_wer", "srt_matches_narration_text")}, indent=1))
 print("subtitle sync:", {k: R["subtitle_sync"][k] for k in ("cues_measured", "max_abs_offset_ms", "mean_offset_ms")})

@@ -215,10 +215,19 @@ def catmull(pts, n=16):
     return out
 
 
+@lru_cache(None)
+def split_plate():
+    warm = np.asarray(silhouette_plate("warm"), np.float32) / 255
+    cold = np.asarray(silhouette_plate("cold"), np.float32) / 255
+    w = warm.shape[1]
+    k = np.clip((np.arange(w) - w * 0.5) / 140 + 0.5, 0, 1)[None, :, None]
+    return to_img(warm * (1 - k) + cold * k)
+
+
 def r_silhouette(s, t, p, img_out):
     mood = s["params"]["mood"]
-    z0, z1 = s["params"]["z"]
-    plate = silhouette_plate(mood)
+    z0, z1 = s["params"].get("z", (1.0, 1.08))
+    plate = split_plate() if mood == "split" else silhouette_plate(mood)
     im = kb(plate, lerp(z0, z1, ease_io(p)), 0.5, 0.45)
     a = to_arr(im)
     flick = 1 + 0.05 * math.sin(t * 11.0) * math.sin(t * 3.7)
@@ -262,9 +271,9 @@ def r_title(s, t, p, _):
     a = np.full((H, W, 3), 0.025, np.float32) + fog(t, 25, 9, 0.05)
     img = to_img(a)
     sc = lerp(1.0, 1.04, p)
-    draw_text(img, s["params"]["text"], "display", 230 * sc, (W / 2, H * 0.44), LIGHT, ease_out(t / 0.12), tracking=22 * sc)
+    draw_text(img, s["params"]["text"], "display", s["params"].get("size", 230) * sc, (W / 2, H * 0.44), LIGHT, ease_out(t / 0.12), tracking=22 * sc)
     red_line(img, W / 2 - 60, W / 2 + 60, int(H * 0.44 + 115), ease_out((t - 0.1) / 0.2), 4)
-    draw_text(img, "A TRUE CRIME DOCUMENTARY", "sans_semi", 30, (W / 2, H * 0.44 + 165), GREY, ease_out((t - 0.2) / 0.3), tracking=10)
+    draw_text(img, s["params"].get("sub", "A TRUE CRIME DOCUMENTARY"), "sans_semi", 30, (W / 2, H * 0.44 + 165), GREY, ease_out((t - 0.2) / 0.3), tracking=10)
     return to_arr(img)
 
 
@@ -273,8 +282,9 @@ def r_chapter(s, t, p, _):
     a = np.full((H, W, 3), 0.02, np.float32) + fog(t, 35, 4, 0.05)
     img = to_img(a)
     k = ease_out(t / 0.35)
-    draw_text(img, f"CHAPTER {P['num']}", "mono_bold", 34, (W / 2, H * 0.36), RED_SOFT, k, tracking=10)
-    draw_text(img, P["title"], "display", 150, (W / 2 + lerp(30, 0, k), H * 0.47), LIGHT, k, tracking=8)
+    draw_text(img, P.get("kicker") or f"CHAPTER {P['num']}", "mono_bold", 34, (W / 2, H * 0.36), RED_SOFT, k, tracking=10)
+    tsize = 150 if len(P["title"]) <= 22 else max(84, int(150 * 22 / len(P["title"])))
+    draw_text(img, P["title"], "display", tsize, (W / 2 + lerp(30, 0, k), H * 0.47), LIGHT, k, tracking=8)
     lw = 420 * ease_out((t - 0.1) / 0.5)
     red_line(img, W / 2 - lw, W / 2 + lw, int(H * 0.56), 0.9, 2)
     draw_text(img, P["period"], "mono", 36, (W / 2, H * 0.61), GREY, ease_out((t - 0.2) / 0.4), tracking=6)
@@ -286,7 +296,7 @@ def r_date(s, t, p, _):
     a = bg_texture(t, (13, 12, 13), 0.05)
     img = to_img(a)
     big = P["big"]
-    size = 360 if len(big) <= 5 else (230 if len(big) <= 11 else 175)
+    size = 360 if len(big) <= 5 else (230 if len(big) <= 11 else (175 if len(big) <= 17 else 130))
     punch = lerp(1.18, 1.0, ease_out(t / 0.22))
     drift = lerp(1.0, 1.035, p)
     # ghost echo behind
@@ -296,7 +306,7 @@ def r_date(s, t, p, _):
     f = font("sans_bold", 38)
     tw, _ = text_size(P["sub"], f, 8)
     y = H * 0.42 + size * 0.48 + 40
-    ImageDraw.Draw(img).ellipse([W / 2 - tw / 2 - 34, y - 8, W / 2 - tw / 2 - 18, y + 8], fill=RED) if k > 0.5 else None
+    ImageDraw.Draw(img).ellipse([W / 2 - tw / 2 - 34, y - 8, W / 2 - tw / 2 - 18, y + 8], fill=RED) if k > 0.5 and P["sub"] else None
     draw_text(img, P["sub"], "sans_bold", 38, (W / 2 + 6, y), LIGHT, k, tracking=8)
     return to_arr(img)
 
@@ -445,7 +455,10 @@ def r_board(s, t, p, _):
     img = to_img(a)
     d = ImageDraw.Draw(img)
     pan = lerp(30, -30, ease_io(p))
-    cards = [("WASHINGTON", "1974", 380, 300), ("OREGON", "1974", 520, 640), ("UTAH", "1974", 1180, 330), ("COLORADO", "1975", 1420, 620)]
+    labels = s["params"].get("cards") or [["WASHINGTON", "1974"], ["OREGON", "1974"], ["UTAH", "1974"], ["COLORADO", "1975"]]
+    slots = [(380, 300), (520, 640), (1180, 330), (1420, 620)]
+    cards = [(lb[0], lb[1], x, y) for lb, (x, y) in zip(labels, slots)]
+    fit = lambda txt: 40 if len(txt) <= 11 else max(24, int(40 * 11 / len(txt)))
     pos = []
     for i, (st, yr, x, y) in enumerate(cards):
         k = ease_out((t - 0.12 * i) / 0.25)
@@ -455,11 +468,11 @@ def r_board(s, t, p, _):
             continue
         d.rectangle([x + 8, y + 10, x + 308, y + 190], fill=(6, 6, 6))
         d.rectangle([x, y, x + 300, y + 180], fill=(int(178 * k), int(172 * k), int(160 * k)))
-        draw_text(img, st, "mono_bold", 40, (x + 150, y + 70), (25, 25, 25), k)
+        draw_text(img, st, "mono_bold", fit(st), (x + 150, y + 70), (25, 25, 25), k)
         draw_text(img, yr, "mono", 32, (x + 150, y + 125), (90, 30, 30), k)
         d.ellipse([x + 140, y - 8, x + 160, y + 12], fill=RED)
     # strings that stop short: the cases are not yet connected
-    for i, (a0, b0) in enumerate([(0, 1), (0, 2), (2, 3), (1, 3)]):
+    for i, (a0, b0) in enumerate([e for e in [(0, 1), (0, 2), (2, 3), (1, 3)] if max(e) < len(pos)]):
         k = ease_io((t - 0.6 - i * 0.25) / 0.6)
         if k <= 0:
             continue
@@ -468,7 +481,7 @@ def r_board(s, t, p, _):
         d.line([(x0, y0 - 90), (x0 + (x1 - x0) * f, (y0 - 90) + (y1 - y0) * f)], fill=RED, width=4)
         d.line([(x1, y1 - 90), (x1 - (x1 - x0) * f, (y1 - 90) - (y1 - y0) * f)], fill=RED, width=4)
     q = ease_out((t - 1.6) / 0.3)
-    draw_text(img, "?", "display", 220, (W / 2 + pan, H * 0.45), RED_SOFT, q)
+    draw_text(img, s["params"].get("mark", "?"), "display", 220, (W / 2 + pan, H * 0.45), RED_SOFT, q)
     return to_arr(img)
 
 
@@ -585,15 +598,17 @@ def r_timeline(s, t, p, _):
     yr = lerp(P["from"], P["to"], ease_io(p))
     ppy = 420  # pixels per year
     y = H * 0.48
-    for year in range(1972, 1992):
+    for year in range(P.get("y0", 1944), P.get("y1", 1992)):
         x = W / 2 + (year - yr) * ppy
         if -100 < x < W + 100:
             d.line([(x, y - 20), (x, y + 20)], fill=(110, 110, 114), width=3)
             near = 1 - min(1, abs(year - yr) / 1.2)
             draw_text(img, str(year), "display", lerp(60, 120, near), (x, y - 100), tuple(int(lerp(90, 232, near)) for _ in range(3)), 1.0)
     d.line([(0, y), (W, y)], fill=(70, 70, 74), width=2)
-    events = {1974.5: "CASES IN WASHINGTON & UTAH", 1975.6: "ARREST · UTAH", 1976.2: "CONVICTION", 1977.45: "ESCAPE 1", 1977.99: "ESCAPE 2"}
+    events = P.get("events") or {1946.9: "BORN", 1974.1: "FIRST KNOWN CASES", 1975.6: "ARREST · UTAH", 1976.2: "CONVICTION",
+                                 1977.45: "ESCAPE 1", 1977.99: "ESCAPE 2", 1978.04: "FLORIDA", 1979.55: "MIAMI TRIAL", 1980.1: "LEACH TRIAL", 1989.07: "EXECUTION"}
     for ev, label in events.items():
+        ev = float(ev)
         x = W / 2 + (ev - yr) * ppy
         d.ellipse([x - 9, y - 9, x + 9, y + 9], fill=RED)
         draw_text(img, label, "mono_bold", 26, (x, y + 60), (190, 186, 180), 1.0, tracking=2)
@@ -701,7 +716,7 @@ def r_years(s, t, p, _):
     img = to_img(a)
     yr = int(round(lerp(P["from"], P["to"], ease_io(p / 0.65))))
     draw_text(img, str(yr), "display", 380, (W / 2, H * 0.43), LIGHT if yr < P["to"] else RED_SOFT, 1.0, tracking=12, shadow=True)
-    draw_text(img, "DEATH ROW · FLORIDA STATE PRISON", "mono_bold", 36, (W / 2, H * 0.43 + 215), (200, 196, 190), ease_out(t / 0.3), tracking=6)
+    draw_text(img, P.get("label", "DEATH ROW · FLORIDA STATE PRISON"), "mono_bold", 36, (W / 2, H * 0.43 + 215), (200, 196, 190), ease_out(t / 0.3), tracking=6)
     return to_arr(img)
 
 
@@ -756,7 +771,13 @@ def r_textreveal(s, t, p, upper=True, size=120, red=()):
 
 
 def r_question(s, t, p, _):
-    return r_textreveal(s, t, p, size=124)
+    n = len(words_of(s["params"]["line"]))
+    return r_textreveal(s, t, p, size=124 if n <= 12 else (104 if n <= 20 else 88))
+
+
+def r_say(s, t, p, _):
+    n = len(words_of(s["params"]["line"]))
+    return r_textreveal(s, t, p, size=150 if n <= 7 else (124 if n <= 13 else (104 if n <= 20 else 88)))
 
 
 def r_statement(s, t, p, _):
@@ -785,7 +806,7 @@ def r_endcard(s, t, p, _):
     return out * (1 - ease_io((t - (s["duration"] - 1.0)) / 0.9))
 
 
-@lru_cache(8)
+@lru_cache(48)
 def photo_plate(path):
     im = Image.open(ARCHIVAL / path).convert("L")
     im = ImageOps.autocontrast(im, cutoff=1)
@@ -793,10 +814,13 @@ def photo_plate(path):
         f = 1100 / min(im.size); im = im.resize((int(im.size[0] * f), int(im.size[1] * f)), Image.LANCZOS)
     # fit inside 16:9 with blurred fill so portraits are never stretched
     pw, ph = 2400, 1350
-    bgim = ImageOps.fit(im, (pw, ph)).filter(ImageFilter.GaussianBlur(40)).point(lambda v: v * 0.35)
-    sc = min(pw / im.size[0], ph / im.size[1])
-    fg = im.resize((int(im.size[0] * sc), int(im.size[1] * sc)), Image.LANCZOS)
-    bgim.paste(fg, ((pw - fg.size[0]) // 2, (ph - fg.size[1]) // 2))
+    if im.size[0] / im.size[1] >= 1.25:  # landscape: fill the frame
+        bgim = ImageOps.fit(im, (pw, ph), Image.LANCZOS)
+    else:
+        bgim = ImageOps.fit(im, (pw, ph)).filter(ImageFilter.GaussianBlur(40)).point(lambda v: v * 0.35)
+        sc = min(pw / im.size[0], ph / im.size[1])
+        fg = im.resize((int(im.size[0] * sc), int(im.size[1] * sc)), Image.LANCZOS)
+        bgim.paste(fg, ((pw - fg.size[0]) // 2, (ph - fg.size[1]) // 2))
     a = np.asarray(bgim, np.float32)[..., None] / 255
     tone = np.array([1.0, 0.97, 0.92], np.float32)  # neutral archival tone
     return to_img(np.clip((a - 0.5) * 1.12 + 0.5, 0, 1) * tone)
@@ -809,6 +833,250 @@ def r_photo(s, t, p, _):
     img = im.copy()
     draw_text(img, ph.get("caption", ""), "mono_bold", 26, (60, 70), (220, 216, 208), ease_out(t / 0.3), anchor="lm", tracking=3, shadow=True)
     draw_text(img, "ARCHIVAL · " + ph.get("credit", ""), "mono", 20, (60, 105), (170, 166, 160), ease_out(t / 0.3), anchor="lm", tracking=2, shadow=True)
+    return to_arr(img)
+
+
+
+# ------------------------------------------------------------------ long-cut renderers
+CATALOG = load_json(ARCHIVAL / "selected" / "catalog.json") if (ARCHIVAL / "selected" / "catalog.json").exists() else {}
+
+
+@lru_cache(48)
+def print_plate(path, border=True):
+    """Small archival photo as a mounted print (never upscaled past its detail)."""
+    im = Image.open(ARCHIVAL / path).convert("L")
+    im = ImageOps.autocontrast(im, cutoff=1)
+    target_h = 640
+    sc = target_h / im.size[1]
+    if im.size[0] * sc > 1100:
+        sc = 1100 / im.size[0]
+    im = im.resize((int(im.size[0] * sc), int(im.size[1] * sc)), Image.LANCZOS)
+    a = np.asarray(im, np.float32)[..., None] / 255
+    a = np.clip((a - 0.5) * 1.1 + 0.5, 0, 1) * np.array([1.0, 0.97, 0.92], np.float32)
+    ph = to_img(a)
+    if border:
+        b = 22
+        card = Image.new("RGB", (ph.size[0] + 2 * b, ph.size[1] + 2 * b), (214, 208, 196))
+        card.paste(ph, (b, b))
+        ph = card
+    return ph
+
+
+def archive_meta(s):
+    m = dict(CATALOG[s["params"]["img"]])
+    m.update({k: v for k, v in s["params"].items() if k in ("caption",)})
+    return m
+
+
+def caption(img, m, t, x=64, y=112):
+    draw_text(img, m["caption"], "mono_bold", 26, (x, y), (226, 222, 214), ease_out(t / 0.3), anchor="lm", tracking=3, shadow=True)
+    draw_text(img, "ARCHIVAL · " + m["credit"].upper(), "mono", 20, (x, y + 34), (172, 168, 160), ease_out(t / 0.3), anchor="lm", tracking=2, shadow=True)
+
+
+@lru_cache(None)
+def top_shade():
+    """Dark gradient behind the caption block and chapter tag (top-left)."""
+    y = np.clip(np.arange(H, dtype=np.float32) / 260, 0, 1)[:, None]
+    x = np.clip(np.arange(W, dtype=np.float32) / 1300, 0, 1)[None, :]
+    return (1 - 0.6 * (1 - y) * (1 - x * 0.7))[..., None]
+
+
+def r_archive(s, t, p, _):
+    """Archival photo: full-frame Ken Burns for large images, mounted print for small ones."""
+    P = s["params"]
+    m = archive_meta(s)
+    src = Image.open(ARCHIVAL / m["file"])
+    var = P.get("var", 0)
+    if min(src.size) >= 900 and not P.get("print"):
+        z0, z1 = P.get("z", (1.04, 1.14) if var % 2 == 0 else (1.16, 1.05))
+        fx, fy = m["focus"]
+        dx = (0.05 if var % 2 == 0 else -0.05) * (1 if var % 4 < 2 else -1)
+        im = kb(photo_plate(m["file"]), lerp(z0, z1, ease_io(p)), fx + lerp(-dx, dx, ease_io(p)), fy + lerp(0.02, -0.02, ease_io(p)))
+        img = im.copy()
+        a = to_arr(img)
+        a *= radial(W, H, W / 2, H / 2, W * 0.9, H * 1.1, 0.6)[..., None] * 0.35 + 0.65
+        a *= top_shade()
+        img = to_img(a)
+        caption(img, m, t)
+        return to_arr(img)
+    # mounted print on a dark desk
+    a = bg_texture(t, (13, 13, 14), 0.03, seed=22)
+    a += radial(W, H, W * 0.5, H * 0.42, W * 0.55, H * 0.75, 1.5)[..., None] * 0.06
+    img = to_img(a)
+    pr = print_plate(m["file"])
+    z = lerp(*(P.get("z") or ((0.98, 1.06) if var % 2 == 0 else (1.08, 1.0))), ease_io(p))
+    rot = lerp(-1.6, -0.8, p) if var % 2 == 0 else lerp(1.2, 0.5, p)
+    pr2 = pr.resize((int(pr.size[0] * z), int(pr.size[1] * z)), Image.BICUBIC).rotate(rot, expand=True, resample=Image.BICUBIC, fillcolor=(0, 0, 0))
+    mask = Image.new("L", pr.size, 255).resize(pr2.size if False else (int(pr.size[0] * z), int(pr.size[1] * z))).rotate(rot, expand=True)
+    cx = W * P.get("x", 0.585)
+    x0, y0 = int(cx - pr2.size[0] / 2), int(H * 0.43 - pr2.size[1] / 2)
+    sh = mask.filter(ImageFilter.GaussianBlur(26)).point(lambda v: int(v * 0.75))
+    img.paste((0, 0, 0), (x0 + 18, y0 + 24), sh)
+    img.paste(pr2, (x0, y0), mask)
+    caption(img, m, t)
+    return to_arr(img)
+
+
+def r_victim(s, t, p, _):
+    """Respectful portrait card: mounted print + name. No graphic content."""
+    P = s["params"]
+    m = CATALOG[P["img"]]
+    a = np.zeros((H, W, 3), np.float32) + 0.016 + fog(t, 10, 23, 0.03)
+    img = to_img(a)
+    pr = print_plate(m["file"])
+    z = lerp(1.0, 1.04, p)
+    pr2 = pr.resize((int(pr.size[0] * z * 0.86), int(pr.size[1] * z * 0.86)), Image.BICUBIC)
+    k = ease_io(t / 0.6)
+    x0, y0 = int(W * 0.30 - pr2.size[0] / 2), int(H * 0.44 - pr2.size[1] / 2)
+    lay = Image.new("L", pr2.size, int(255 * k))
+    img.paste(pr2, (x0, y0), lay)
+    tx = int(W * 0.52)
+    draw_text(img, P["name"], "sans_semi", 70, (tx, H * 0.40), LIGHT, ease_io((t - 0.3) / 0.6), anchor="lm", tracking=6)
+    red_line(img, tx, tx + 90 * ease_io((t - 0.6) / 0.5), int(H * 0.47), 1.0, 3)
+    for i, ln in enumerate(P.get("lines", [])):
+        draw_text(img, ln, "mono_bold", 32, (tx, H * (0.53 + 0.055 * i)), (196, 192, 184), ease_io((t - 0.8 - 0.25 * i) / 0.6), anchor="lm", tracking=4)
+    draw_text(img, "PHOTO: " + m["credit"].upper(), "mono", 20, (x0, y0 + pr2.size[1] + 30), (120, 118, 114), 0.9 * k, anchor="lm", tracking=2)
+    return to_arr(img)
+
+
+def r_namelist(s, t, p, _):
+    """Names appearing as they are spoken, with place/date and optional portrait thumbnails."""
+    P = s["params"]
+    T = s["start"] + t
+    a = np.zeros((H, W, 3), np.float32) + 0.016 + fog(t, 10, 24, 0.03)
+    img = to_img(a)
+    rows = P["rows"]
+    rh = min(150, int(H * 0.68 / max(1, len(rows))))
+    y = H * 0.44 - (len(rows) - 1) * rh / 2
+    for name, sub, at, im in rows:
+        k = ease_out((T - at + 0.05) / 0.35)
+        if k > 0:
+            x = W * 0.36
+            if im:
+                th = print_plate(CATALOG[im]["file"], False)
+                th = ImageOps.fit(th, (int(rh * 0.78), int(rh * 0.92)), centering=(0.5, 0.3))
+                img.paste(th, (int(x - rh * 1.0), int(y - rh * 0.46)), Image.new("L", th.size, int(255 * k)))
+            else:
+                ImageDraw.Draw(img).rectangle([x - rh * 1.0, y - rh * 0.46, x - rh * 0.22, y + rh * 0.46], outline=(70, 70, 72), width=2)
+            draw_text(img, name, "sans_semi", int(rh * 0.36), (x + lerp(20, 0, k), y - rh * 0.12), LIGHT, k, anchor="lm", tracking=4)
+            draw_text(img, sub, "mono_bold", int(rh * 0.2), (x, y + rh * 0.22), (170, 166, 160), k, anchor="lm", tracking=3)
+        y += rh
+    return to_arr(img)
+
+
+def r_roll(s, t, p, _):
+    """In-memory roll of the victims named in this film."""
+    P = s["params"]
+    a = np.zeros((H, W, 3), np.float32) + 0.012 + fog(t, 8, 25, 0.03)
+    img = to_img(a)
+    names = P["names"]
+    gap = 74
+    y0 = H * 0.5 - lerp(0, gap * 2.0, p) - (len(names) - 1) * gap / 2 + gap * 2
+    for i, n in enumerate(names):
+        y = y0 + i * gap
+        if -60 < y < H - 200:
+            fade = min(1, (y + 60) / 160, (H - 200 - y) / 160)
+            draw_text(img, n, "sans_semi", 46, (W / 2, y), LIGHT, ease_io((t - 0.2 * i) / 0.6) * clamp(fade), tracking=8)
+    return to_arr(img)
+
+
+def r_wordstack(s, t, p, _):
+    """Keywords stacking up as they are spoken; the newest is white, earlier ones dim."""
+    P = s["params"]
+    T = s["start"] + t
+    a = bg_texture(t, (12, 12, 13), 0.04)
+    img = to_img(a)
+    items = P["items"]
+    longest = max(len(x[0]) for x in items)
+    size = 130 if longest <= 12 else (100 if longest <= 20 else 76)
+    lh = size * 1.05
+    y = H * 0.42 - (len(items) - 1) * lh / 2
+    shown = [i for i, (_, at) in enumerate(items) if T >= at - 0.05]
+    newest = shown[-1] if shown else -1
+    for i, (txt, at) in enumerate(items):
+        k = ease_out((T - at + 0.05) / 0.22)
+        if k > 0:
+            col = (RED_SOFT if P.get("red_last") and i == len(items) - 1 else LIGHT) if i == newest else (95, 95, 98)
+            draw_text(img, txt, "display", size, (W / 2 + lerp(40, 0, k), y), col, k, tracking=8)
+        y += lh
+    return to_arr(img)
+
+
+def r_family(s, t, p, _):
+    """Who he was told was who: a simple relationship diagram."""
+    a = bg_texture(t, (13, 13, 14), 0.035)
+    img = to_img(a)
+    d = ImageDraw.Draw(img)
+    boxes = [("HIS GRANDPARENTS", 'PRESENTED AS HIS "PARENTS"', W * 0.30, H * 0.30, 0.0),
+             ("HIS MOTHER, ELEANOR", 'PRESENTED AS HIS "SISTER"', W * 0.70, H * 0.30, 0.5),
+             ("THEODORE ROBERT COWELL", "BORN 1946", W * 0.50, H * 0.64, 1.0)]
+    for title, sub, x, y, d0 in boxes:
+        k = ease_out((t - d0) / 0.4)
+        if k <= 0:
+            continue
+        d.rectangle([x - 300, y - 80, x + 300, y + 80], outline=(int(150 * k),) * 3, width=2)
+        draw_text(img, title, "sans_bold", 40, (x, y - 22), LIGHT, k, tracking=4)
+        draw_text(img, sub, "mono_bold", 28, (x, y + 30), RED_SOFT if '"' in sub else GREY, k, tracking=3)
+    for x in (W * 0.30, W * 0.70):
+        k = ease_io((t - 1.2) / 0.5)
+        if k > 0:
+            ex, ey = lerp(x, W * 0.5, k), lerp(H * 0.30 + 80, H * 0.64 - 80, k)
+            d.line([(x, H * 0.30 + 80), (ex, ey)], fill=(120, 120, 124), width=2)
+    return to_arr(img)
+
+
+@lru_cache(None)
+def rain_bokeh(seed):
+    r = np.random.default_rng(seed)
+    a = np.zeros((H, W, 3), np.float32) + np.array([0.02, 0.022, 0.028], np.float32)
+    for _ in range(26):
+        x, y, rr = r.uniform(0, W), r.uniform(0, H * 0.8), r.uniform(40, 140)
+        col = np.array([[0.55, 0.42, 0.25], [0.5, 0.1, 0.1], [0.3, 0.32, 0.38]][r.integers(0, 3)], np.float32)
+        a += radial(W, H, x, y, rr, rr, 2.5)[..., None] * col * r.uniform(0.15, 0.45)
+    return a
+
+
+def r_rain(s, t, p, _):
+    """Rain on a dark window, city lights out of focus (atmosphere only)."""
+    a = rain_bokeh(s["index"] % 3).copy()
+    a *= lerp(1.0, 0.85, p)
+    lay = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(lay)
+    r = np.random.default_rng(int(t * FPS) // 2)
+    for _ in range(140):
+        x, y = r.uniform(0, W), r.uniform(-100, H)
+        l = r.uniform(20, 70)
+        d.line([(x, y), (x - 4, y + l)], fill=int(r.uniform(40, 110)), width=1)
+    st = np.random.default_rng(99)
+    for _ in range(60):  # slow droplets on the glass
+        x0, y0, sp = st.uniform(0, W), st.uniform(0, H), st.uniform(8, 30)
+        y = (y0 + t * sp) % H
+        rr = st.uniform(2, 6)
+        d.ellipse([x0 - rr, y - rr * 1.3, x0 + rr, y + rr * 1.3], fill=120)
+    streak = np.asarray(lay.filter(ImageFilter.GaussianBlur(1.2)), np.float32)[..., None] / 255
+    a += streak * 0.25
+    return a + fog(t, 20, 26, 0.03)
+
+
+def r_lineup(s, t, p, _):
+    """Police line-up (illustration): height chart and anonymous silhouettes."""
+    a = np.zeros((H, W, 3), np.float32) + 0.10
+    a += radial(W, H, W / 2, H * 0.45, W * 0.7, H * 0.8, 1.2)[..., None] * np.array([0.16, 0.155, 0.145], np.float32)
+    img = to_img(a + fog(t, 12, 27, 0.03))
+    d = ImageDraw.Draw(img)
+    for i, ft in enumerate(range(4, 8)):
+        y = H * 0.82 - i * 150
+        d.line([(0, y), (W, y)], fill=(80, 80, 84), width=2)
+        draw_text(img, f"{ft} FT", "mono_bold", 26, (60, y - 18), (150, 150, 154), 1.0, anchor="lm")
+    pan = lerp(-40, 40, ease_io(p))
+    for i in range(5):
+        x = W * (0.18 + 0.16 * i) + pan
+        hgt = 420 + (i * 37 % 60)
+        top = H * 0.82 - hgt
+        d.ellipse([x - 48, top, x + 48, top + 118], fill=(8, 8, 9))
+        d.polygon([(x - 120, H * 0.82 + 5), (x - 110, top + 170), (x - 40, top + 125), (x + 40, top + 125), (x + 110, top + 170), (x + 120, H * 0.82 + 5)], fill=(8, 8, 9))
+        draw_text(img, str(i + 1), "display", 64, (x, H * 0.88), (190, 190, 194), 1.0)
+    draw_text(img, "POLICE LINEUP · OCTOBER 1975", "mono_bold", 30, (W / 2, H * 0.14), (210, 206, 198), ease_out(t / 0.4), tracking=6)
     return to_arr(img)
 
 
@@ -872,11 +1140,12 @@ def draw_subs(img, T):
 
 
 # ------------------------------------------------------------------ frame assembly
+import bisect
+STARTS = [s["start"] for s in SHOTS]
+
+
 def shot_at(T):
-    for i, s in enumerate(SHOTS):
-        if s["start"] <= T < s["end"]:
-            return i
-    return len(SHOTS) - 1
+    return max(0, min(len(SHOTS) - 1, bisect.bisect_right(STARTS, T) - 1))
 
 
 def render_shot(s, T):
@@ -901,7 +1170,7 @@ def frame(n):
     # film look: vignette, grain, gentle gate flicker
     flick = 1 + 0.012 * math.sin(T * 17.1) * math.sin(T * 5.3)
     a = a * vignette() * flick
-    a += grain_frames()[n % 12] * 0.022
+    a += grain_frames()[(n // 2) % 12] * 0.016
     img = to_img(a)
     chapter_tag(img, s, T)
     illus_tag(img, s)
@@ -915,8 +1184,11 @@ def render_range(args):
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-"]
     if scale != 1:
         cmd += ["-vf", f"scale={int(W * scale)}:{int(H * scale)}"]
-    cmd += ["-c:v", "libx264", "-preset", "veryfast" if scale != 1 else "slow", "-crf", "23" if scale != 1 else "15",
-            "-pix_fmt", "yuv420p", "-threads", "1", path]
+    if scale != 1:
+        cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "24"]
+    else:  # capped CRF: ~4 Mb/s ceiling keeps a 26-minute film under ~850 MB
+        cmd += ["-c:v", "libx264", "-preset", "faster", "-crf", "21", "-maxrate", "4200k", "-bufsize", "8400k", "-g", str(FPS * 4)]
+    cmd += ["-pix_fmt", "yuv420p", "-threads", "1", path]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     for n in range(a, b):
         proc.stdin.write(frame(n).tobytes())
@@ -937,7 +1209,7 @@ def main():
     preview = "--preview" in args
     scale = 0.5 if preview else 1
     workers = os.cpu_count() or 4
-    nseg = workers * 3
+    nseg = workers * (8 if TL["duration"] > 600 else 3)
     bounds = np.linspace(0, total, nseg + 1).astype(int)
     seg_dir = BUILD / ("seg_preview" if preview else "seg_final")
     seg_dir.mkdir(exist_ok=True)

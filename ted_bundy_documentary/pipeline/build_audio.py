@@ -151,80 +151,122 @@ def key_click(gain=1.0):
 
 
 # ------------------------------------------------------------------ score
+# per-chapter intensity: pulse bpm (None = no pulse), pulse gain, toms, ticks, motif spacing (s), upper drone, ostinato
+PROFILE = {0: (None, 0.0, False, False, 2.2, 0.3, False), 1: (None, 0.0, False, False, 2.4, 0.0, False),
+           2: (60, 0.16, False, False, 2.6, 0.0, False), 3: (64, 0.26, False, False, None, 0.4, False),
+           4: (80, 0.28, False, True, None, 0.3, False), 5: (92, 0.34, True, True, None, 0.9, True),
+           6: (96, 0.34, True, True, None, 0.9, True), 7: (None, 0.0, False, False, 2.4, 0.2, False),
+           8: (58, 0.15, False, False, 3.0, 0.0, False), 9: (None, 0.0, False, False, 3.2, 0.2, False),
+           10: (None, 0.0, False, False, 2.6, 0.0, False)}
+
+
+def chapter_spans():
+    starts = {0: 0.0}
+    for s in TL["shots"]:
+        if s["type"] == "chapter":
+            starts[s["chapter"]] = s["start"]
+    ks = sorted(starts)
+    return [(k, starts[k], starts[ks[i + 1]] if i + 1 < len(ks) else DUR) for i, k in enumerate(ks)]
+
+
+def quiet_spans():
+    return [(s["start"], s["end"]) for s in TL["shots"] if s["type"] in ("memorial", "execdate", "roll")]
+
+
+def drone_chunked(f0, gain, cutoff, harmonics=7, detune=0.0025, seed=0):
+    """Long drone generated in 30 s chunks (bounded memory), continuous phase and filter state."""
+    r = np.random.default_rng(seed)
+    phases = r.uniform(0, 6.28, (harmonics, 2))
+    sos = butter(2, cutoff, "low", fs=SR, output="sos")
+    zi = np.zeros((sos.shape[0], 2))
+    out = np.zeros(N, np.float32)
+    step = SR * 30
+    for i0 in range(0, N, step):
+        t = (np.arange(i0, min(N, i0 + step)) / SR)
+        sig = np.zeros(len(t))
+        for k in range(1, harmonics + 1):
+            for j, d in enumerate((-detune, detune)):
+                sig += np.sin(2 * np.pi * f0 * k * (1 + d) * t + phases[k - 1, j]) / k
+        sig *= 1 + 0.18 * np.sin(2 * np.pi * 0.07 * t)
+        y, zi = sosfilt(sos, sig, zi=zi)
+        out[i0:i0 + len(t)] = y * 0.12 * gain
+    return out
+
+
 def build_music():
-    L = np.zeros(N); R = np.zeros(N)
-    early, arrest, trial, ending = SEC["EARLY CASES"]["start"], SEC["ARREST AND ESCAPES"]["start"], SEC["TRIAL"]["start"], SEC["ENDING"]["start"]
-    florida = shot_t("chapter", 3)
-    memorial = shot_t("memorial")
-    pens = [s for s in TL["shots"] if s["type"] == "map"][-1]["start"]
-    exec_end = VT["lines"][17]["end"]
-    question = VT["lines"][19]["start"]
+    L = np.zeros(N, np.float32); R = np.zeros(N, np.float32)
+    spans = chapter_spans()
+    quiet = quiet_spans()
     end = DUR
-
-    # drone bed (D) + fifth, stereo-detuned
-    d1 = drone(73.42, N); d2 = drone(110.0, N, cutoff=700) * 0.5
-    d1r = drone(73.42 * 1.002, N); d2r = drone(110.0 * 0.998, N, cutoff=700) * 0.5
-    bed_env = env_curve([(0, 0.0), (0.25, 0.75), (6.0, 1.0), (ending, 0.9), (exec_end, 0.6), (exec_end + 0.4, 0.12),
-                         (question - 1.0, 0.12), (question + 1.5, 0.75), (end - 6.5, 0.8), (end - 0.3, 0.0), (end, 0.0)])
-    L += (d1 + d2) * bed_env; R += (d1r + d2r) * bed_env
-    a = air(N)
-    air_env = env_curve([(0, 0), (1.0, 0.8), (early, 0.5), (florida, 1.0), (trial, 0.4), (end - 1, 0.6), (end, 0)])
-    L += a * air_env; R += np.roll(a, 900) * air_env
-
-    # upper drone layer for Florida (controlled intensity)
-    d3 = drone(146.83, N, cutoff=1400, harmonics=5) * 0.45
-    up_env = env_curve([(0, 0), (florida - 0.5, 0), (florida + 1.0, 1.0), (memorial, 1.0), (memorial + 0.6, 0.35),
-                        (pens, 0.35), (pens + 0.5, 0.9), (trial - 0.2, 0.9), (trial + 0.8, 0), (end, 0)])
-    L += d3 * up_env; R += np.roll(d3, 300) * up_env
-
-    # piano-like motif: sparse in Ch1, sparser in the trial
+    # bed automation: chapter-level, ducked deeply during memorial/execution cards, fade in/out
+    pts = [(0, 0.0), (0.3, 0.75)]
+    for a, b in quiet:
+        pts += [(a - 0.4, 1.0), (a + 0.3, 0.32), (b - 0.3, 0.32), (b + 0.6, 1.0)]
+    pts += [(end - 7.0, 0.85), (end - 0.3, 0.0), (end, 0.0)]
+    pts.sort()
+    bed = env_curve(pts)
+    for f, g, c, sd in ((73.42, 1.0, 900, 1), (110.0, 0.5, 700, 2)):
+        L += drone_chunked(f, g, c, seed=sd) * bed
+        R += drone_chunked(f * 1.002, g, c, seed=sd + 10) * bed
+    a = (bp(rng.normal(0, 1, N).astype(np.float32), 1800, 5200) * 0.05).astype(np.float32)
+    L += a * bed * 0.7; R += np.roll(a, 900) * bed * 0.7
+    del a
+    # upper drone per chapter profile
+    up_pts = [(0, 0)]
+    for k, a0, b0 in spans:
+        lvl = PROFILE[k][5]
+        up_pts += [(a0 + 0.5, lvl), (b0 - 0.5, lvl)]
+    up = env_curve(sorted(up_pts)) * bed
+    d3 = drone_chunked(146.83, 0.45, 1400, harmonics=5, seed=3)
+    L += d3 * up; R += np.roll(d3, 300) * up
+    del d3
     motif = [146.83, 174.61, 220.0, 164.81, 146.83, 130.81, 116.54, 110.0]
-    def motif_run(t0, t1, every, gain):
-        k, t = 0, t0
-        while t < t1:
-            p = pluck(motif[k % len(motif)], gain)
-            add(L, p, t, 0.9); add(R, p, t + 0.012, 0.75)
-            k += 1; t += every
-    motif_run(early + 0.2, SEC["EARLY CASES"]["start"] + 12.0, 1.85, 0.11)
-    motif_run(trial + 0.1, ending - 0.4, 2.4, 0.10)
-
-    # heartbeat pulse in Ch2 (64 bpm) -> 84 bpm in Ch3 -> 96 bpm in Florida
-    def pulse(t0, t1, bpm, gain, toms=False, ticks=False, skip=()):
-        beat = 60 / bpm; t = t0; i = 0
-        while t < t1:
-            if not any(a <= t < b for a, b in skip):
-                kk = kick(gain); add(L, kk, t); add(R, kk, t)
-                if bpm < 70:  # double-beat 'heartbeat'
-                    add(L, kick(gain * 0.55), t + 0.24); add(R, kick(gain * 0.55), t + 0.24)
-                if toms and i % 4 == 3:
-                    tm = tom(gain * 0.6); add(L, tm, t + beat / 2, 0.8); add(R, tm, t + beat / 2, 0.5)
-                if ticks:
-                    for h in range(2):
-                        tk = tick(0.10 if h == 0 else 0.06); add(L, tk, t + h * beat / 2, 0.6); add(R, tk, t + h * beat / 2 + 0.003, 0.9)
-            t += beat; i += 1
-    ch2 = shot_t("chapter", 1)
-    pulse(ch2 + 0.9, arrest - 0.3, 64, 0.30)
-    pulse(arrest, florida - 0.4, 84, 0.34, toms=True, ticks=True, skip=[(SHOT_START[30] - 0.1, SHOT_START[31])])
-    pulse(florida + 0.9, memorial - 0.2, 96, 0.38, toms=True, ticks=True)
-    pulse(pens, trial - 0.3, 96, 0.30, ticks=True)
-    # low ostinato in Florida
+    in_quiet = lambda t: any(a - 0.2 <= t < b for a, b in quiet)
     ost = [73.42, 73.42, 87.31, 73.42, 65.41, 73.42, 87.31, 98.0]
-    t, k = florida + 0.9, 0
-    while t < memorial - 0.2:
-        p = pluck(ost[k % 8] * 2, 0.07, dec=0.6); add(L, p, t, 0.7); add(R, p, t, 0.9)
-        t += 60 / 96 / 2; k += 1
-    # final tail: soft low chord swell under the closing lines
+    for k, a0, b0 in spans:
+        bpm, pg, toms, ticks, mot, _, osti = PROFILE[k]
+        if mot:
+            t, i = a0 + 1.0, 0
+            while t < b0 - 1.0:
+                if not in_quiet(t):
+                    p = pluck(motif[i % 8], 0.10).astype(np.float32); add(L, p, t, 0.9); add(R, p, t + 0.012, 0.75)
+                i += 1; t += mot * (1.0 if i % 8 else 1.6)
+        if bpm:
+            beat = 60 / bpm; t, i = a0 + 1.0, 0
+            while t < b0 - 0.5:
+                if not in_quiet(t):
+                    kk = kick(pg).astype(np.float32); add(L, kk, t); add(R, kk, t)
+                    if bpm < 70:
+                        k2 = kick(pg * 0.55).astype(np.float32); add(L, k2, t + 0.24); add(R, k2, t + 0.24)
+                    if toms and i % 4 == 3:
+                        tm = tom(pg * 0.6).astype(np.float32); add(L, tm, t + beat / 2, 0.8); add(R, tm, t + beat / 2, 0.5)
+                    if ticks:
+                        for h in range(2):
+                            tk = tick(0.10 if h == 0 else 0.06).astype(np.float32); add(L, tk, t + h * beat / 2, 0.6); add(R, tk, t + h * beat / 2 + 0.003, 0.9)
+                t += beat; i += 1
+        if osti:
+            t, i = a0 + 1.5, 0
+            while t < b0 - 0.5:
+                if not in_quiet(t):
+                    p = pluck(ost[i % 8] * 2, 0.06, dec=0.6).astype(np.float32); add(L, p, t, 0.7); add(R, p, t, 0.9)
+                t += 60 / bpm / 2; i += 1
+    # final tail: soft low chord under the last minute
+    t0 = max(0, end - 60)
+    n = int((end - t0) * SR); tt_ = tt(n)
     for f, g in ((73.42, 0.10), (110.0, 0.07), (174.61, 0.05), (220.0, 0.04)):
-        n = int((end - question) * SR); tt_ = tt(n)
-        sig = np.sin(2 * np.pi * f * tt_) * np.clip(tt_ / 3.0, 0, 1) * np.clip((end - question - tt_) / 3.0, 0, 1) * g
-        add(L, sig, question); add(R, sig, question + 0.01)
-    m = np.stack([L, R], 1)
-    m = np.stack([reverb(m[:, 0], 0.22), reverb(m[:, 1], 0.22)], 1)
-    return m
+        sig = (np.sin(2 * np.pi * f * tt_) * np.clip(tt_ / 6.0, 0, 1) * np.clip((end - t0 - tt_) / 5.0, 0, 1) * g).astype(np.float32)
+        add(L, sig, t0); add(R, sig, t0 + 0.01)
+    return np.stack([reverb_long(L, 0.22), reverb_long(R, 0.22)], 1)
+
+
+def reverb_long(x, wet):
+    from scipy.signal import oaconvolve
+    reverb(np.zeros(10), wet)  # builds the impulse response
+    return (x * (1 - wet) + oaconvolve(x, _IR.astype(np.float32))[: len(x)] * wet * 2.2).astype(np.float32)
 
 
 def build_sfx():
-    L = np.zeros(N); R = np.zeros(N)
+    L = np.zeros(N, np.float32); R = np.zeros(N, np.float32)
     for s in TL["shots"]:
         t0 = s["start"]
         for fx in s["sfx"]:
@@ -239,7 +281,7 @@ def build_sfx():
             elif fx == "whoosh":
                 x = whoosh(0.8); add(L, x, t0 - 0.25, 0.9); add(R, x, t0 - 0.22, 0.7)
             elif fx == "riser":
-                x = riser(1.4, 0.5); add(L, x, s["end"] - 1.4); add(R, x, s["end"] - 1.4)
+                x = riser(1.4, 0.5); add(L, x, min(s["end"], t0 + 3.0) - 1.4); add(R, x, min(s["end"], t0 + 3.0) - 1.4)
             elif fx == "riser_soft":
                 x = riser(1.6, 0.25); add(L, x, t0 - 1.6); add(R, x, t0 - 1.6)
             elif fx == "stamp":

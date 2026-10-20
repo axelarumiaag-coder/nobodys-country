@@ -18,6 +18,10 @@ NUM_WORDS = {"1970s": "nineteen seventies", "1974": "nineteen seventy four", "19
 def spoken_weight(word):
     core = re.sub(r"[^\w]", "", word)
     spoken = NUM_WORDS.get(core, core)
+    if re.fullmatch(r"\d{4}s?", core):
+        spoken = "nineteen seventy seven" + ("s" if core.endswith("s") else "")
+    elif re.fullmatch(r"\d{1,2}", core):
+        spoken = "twenty four"
     return len(spoken.replace(" ", "")) + 2.5
 
 
@@ -129,7 +133,7 @@ def main():
             a = tighten_pauses(resample_poly(s, SR, sr).astype(np.float32), SR)
             words = word_times(line["text"], a, SR)
             dur = len(a) / SR
-            timing["lines"].append({"index": li, "section": sec["id"], "text": line["text"],
+            timing["lines"].append({"index": li, "section": sec["id"], "para": line.get("para", 0), "text": line["text"],
                                     "start": round(t, 3), "end": round(t + dur, 3),
                                     "words": [{"w": w, "start": round(t + ws, 3), "end": round(t + we, 3)} for w, ws, we in words]})
             pieces.append(a)

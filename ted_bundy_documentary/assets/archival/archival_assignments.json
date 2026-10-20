@@ -7,7 +7,11 @@
     "vw_beetle": null,
     "trial_1979": null,
     "doc_1980": null,
-    "thumbnail_portrait": null
+    "thumbnail_portrait": {
+      "file": "selected/bundy_headshot_1978.jpg",
+      "caption": "TED BUNDY \u00b7 FLORIDA, 1978",
+      "credit": "State Archives of Florida"
+    }
   },
   "_example": {
     "file": "06_Preso_i_ultims_anys_1980-1989/0XX_TedBundy1980DOCPhotoColor.jpg",

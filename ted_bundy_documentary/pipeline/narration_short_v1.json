@@ -1,0 +1,120 @@
+{
+  "voice": "am_michael",
+  "speed": 0.97,
+  "notes": "Each line is synthesized separately so its timing is exact. 'pause_after' is silence (seconds) inserted after the line. Edits vs. the supplied script are listed in quality_control_report.txt.",
+  "sections": [
+    {
+      "id": "HOOK",
+      "lines": [
+        {
+          "text": "He looked like someone you could trust.",
+          "pause_after": 0.35
+        },
+        {
+          "text": "That was part of what made Ted Bundy so frightening.",
+          "pause_after": 0.9
+        }
+      ]
+    },
+    {
+      "id": "EARLY CASES",
+      "lines": [
+        {
+          "text": "In the early 1970s, Bundy was a university student in Washington state.",
+          "pause_after": 0.35
+        },
+        {
+          "text": "He seemed intelligent and charming.",
+          "pause_after": 0.45
+        },
+        {
+          "text": "But behind that image, young women began disappearing.",
+          "pause_after": 0.9
+        },
+        {
+          "text": "In 1974, attacks in the Pacific Northwest sparked fear.",
+          "pause_after": 0.35
+        },
+        {
+          "text": "Witnesses described a polite, clean-cut man who sometimes pretended to need help.",
+          "pause_after": 0.4
+        },
+        {
+          "text": "Investigators struggled to connect the cases as Bundy moved between states.",
+          "pause_after": 0.9
+        }
+      ]
+    },
+    {
+      "id": "ARREST AND ESCAPES",
+      "lines": [
+        {
+          "text": "In 1975, he was arrested in Utah after police stopped his Volkswagen Beetle.",
+          "pause_after": 0.6
+        },
+        {
+          "text": "Evidence linked him to crimes, and he was convicted of kidnapping.",
+          "pause_after": 0.4
+        },
+        {
+          "text": "But the story was far from over.",
+          "pause_after": 0.8
+        },
+        {
+          "text": "In 1977, Bundy escaped custody twice in Colorado.",
+          "pause_after": 0.6
+        },
+        {
+          "text": "He eventually reached Florida, where, in January 1978, he attacked a sorority house, killing two young women.",
+          "pause_after": 0.6
+        },
+        {
+          "text": "Weeks later, he was arrested in Pensacola.",
+          "pause_after": 1.0
+        }
+      ]
+    },
+    {
+      "id": "TRIAL",
+      "lines": [
+        {
+          "text": "His trials became a national spectacle.",
+          "pause_after": 0.35
+        },
+        {
+          "text": "Bundy sometimes represented himself, turning the courtroom into a stage.",
+          "pause_after": 0.4
+        },
+        {
+          "text": "In 1979, he was convicted of the sorority house murders.",
+          "pause_after": 1.0
+        }
+      ]
+    },
+    {
+      "id": "ENDING",
+      "lines": [
+        {
+          "text": "In 1989, Bundy was executed in Florida.",
+          "pause_after": 1.3
+        },
+        {
+          "text": "His case left a disturbing question.",
+          "pause_after": 0.5
+        },
+        {
+          "text": "How could someone hide extreme violence behind an ordinary public image?",
+          "pause_after": 1.2
+        },
+        {
+          "text": "Charm is not proof of character.",
+          "pause_after": 0.45
+        },
+        {
+          "text": "Appearances never tell the whole story.",
+          "pause_after": 0.0
+        }
+      ]
+    }
+  ]
+}
